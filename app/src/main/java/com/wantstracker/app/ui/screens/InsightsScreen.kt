@@ -97,20 +97,27 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
 
             Card(
                 Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(if (year == null) "YOUR WISHLIST AT A GLANCE" else "$year AT A GLANCE", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Spent", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f))
-                            Text(formatInr(spent), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text("Still to buy", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
-                            Text(formatInr(openValue), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                        }
+                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Box(Modifier.size(92.dp).clip(RoundedCornerShape(50.dp))
+                        .background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+                        Text(rate?.let { "$it%" } ?: "—", style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text("Success rate", style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(if (rate == null) "No completed decisions yet" else "$rate% of decided wants bought",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("${bought.size} bought · ${failed.size} let go",
+                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Spent  ${formatInr(spent)}", style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Still to buy  ${formatInr(openValue)}", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -124,7 +131,7 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
                 StatTile("Still open", "${open.size}", statusColor(Status.IN_PROGRESS), Modifier.weight(1f))
             }
 
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Success rate", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     if (rate == null) {
