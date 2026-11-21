@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.wantstracker.app.data.CategoryEntity
+import com.wantstracker.app.data.Defaults
 import com.wantstracker.app.data.WantEntity
 import com.wantstracker.app.domain.Priority
 import com.wantstracker.app.domain.QuarterKey
@@ -82,9 +83,10 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     var link by rememberSaveable { mutableStateOf(initial?.link ?: "") }
     var notes by rememberSaveable { mutableStateOf(initial?.notes ?: "") }
     var categoryId by rememberSaveable { mutableStateOf<Long?>(initial?.categoryId) }
-    var priority by rememberSaveable { mutableStateOf(initial?.priority ?: Priority.WANT) }
-    var plannedYear by rememberSaveable { mutableStateOf<Int?>(initial?.plannedYear) }
-    var plannedQuarter by rememberSaveable { mutableStateOf<Int?>(initial?.plannedQuarter) }
+    var wantEmoji by rememberSaveable { mutableStateOf(initial?.emoji ?: "🛍️") }
+    var priority by rememberSaveable { mutableStateOf(initial?.priority?.takeUnless { it == Priority.NEED } ?: Priority.WANT) }
+    var plannedYear by rememberSaveable { mutableStateOf<Int?>(initial?.plannedYear ?: if (initial == null) QuarterKey.now().year else null) }
+    var plannedQuarter by rememberSaveable { mutableStateOf<Int?>(initial?.plannedQuarter ?: if (initial == null) 1 else null) }
     var status by rememberSaveable { mutableStateOf(initial?.status ?: Status.NOT_STARTED) }
     var paidText by rememberSaveable {
         mutableStateOf(initial?.pricePaid?.let { plainNumber(it) } ?: "")
@@ -107,6 +109,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     price = price,
                     link = link.trim(),
                     notes = notes.trim(),
+                    emoji = wantEmoji,
                     priority = priority,
                     categoryId = categoryId,
                     plannedYear = plannedYear,
@@ -196,7 +199,15 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 )
             }
 
-            FormSection("02  ·  Category", "Group similar wants together.") {
+            FormSection("02  ·  Emoji", "Choose an icon for this want. It is independent of category.") {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Defaults.emojiChoices.forEach { emoji ->
+                        FilterChip(selected = wantEmoji == emoji, onClick = { wantEmoji = emoji }, label = { Text(emoji) })
+                    }
+                }
+            }
+
+            FormSection("03  ·  Category", "Group similar wants together.") {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
                     categories.forEach { c ->
@@ -210,9 +221,9 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 }
             }
 
-            FormSection("03  ·  Priority", "Choose how important this want is.") {
+            FormSection("04  ·  Priority", "Choose how important this want is.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Priority.entries.forEach { p ->
+                    Priority.entries.filter { it != Priority.NEED }.forEach { p ->
                         FilterChip(
                             selected = priority == p,
                             onClick = { priority = p },
@@ -222,7 +233,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 }
             }
 
-            FormSection("04  ·  Plan", "Choose when you want to get it.") {
+            FormSection("05  ·  Plan", "Choose when you want to get it.") {
                 QuarterPicker(plannedYear, plannedQuarter) { y, q ->
                     plannedYear = y
                     plannedQuarter = q
@@ -230,7 +241,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
             }
 
             if (isNew) {
-                FormSection("05  ·  Progress", "Set the current status of this want.") {
+                FormSection("06  ·  Progress", "Set the current status of this want.") {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Status.entries.forEach { statusOption ->
                             FilterChip(
