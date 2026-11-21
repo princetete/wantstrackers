@@ -65,6 +65,7 @@ import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.Routes
 import com.wantstracker.app.ui.SectionHeader
 import com.wantstracker.app.ui.StatusRequester
+import com.wantstracker.app.ui.SummaryCard
 import com.wantstracker.app.ui.WantCard
 import com.wantstracker.app.ui.rememberStatusRequester
 import com.wantstracker.app.ui.theme.statusColor
@@ -235,7 +236,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                 wants.isEmpty() -> EmptyState("🛍️", "Nothing here yet", "Tap “Add want” to start your wishlist.")
                 filtered.isEmpty() && !board -> EmptyState("🔍", "No matches", "Try clearing some filters.")
                 board -> BoardView(base, catById, nav, vm, requester)
-                else -> ListView(filtered, catById, nav, vm, requester, sort, thisQuarter)
+                else -> ListView(wants, filtered, catById, nav, vm, requester, sort, thisQuarter)
             }
         }
     }
@@ -253,6 +254,7 @@ private fun ChipRow(content: @Composable () -> Unit) {
 
 @Composable
 private fun ListView(
+    all: List<WantEntity>,
     filtered: List<WantEntity>,
     catById: Map<Long, CategoryEntity>,
     nav: NavController,
@@ -262,10 +264,23 @@ private fun ListView(
     thisQuarter: QuarterKey
 ) {
     val pending = filtered.filter { it.status.isOpen }.sumOf { it.price }
+    val quarterWants = all.filter { it.plannedKey == thisQuarter }
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        if (quarterWants.isNotEmpty()) {
+            item(key = "quarter_summary") {
+                SummaryCard(
+                    quarterLabel = thisQuarter.label,
+                    spent = quarterWants.filter { it.status == Status.BOUGHT }.sumOf { it.pricePaid ?: it.price },
+                    planned = quarterWants.sumOf { it.price },
+                    bought = quarterWants.count { it.status == Status.BOUGHT },
+                    inProgress = quarterWants.count { it.status == Status.IN_PROGRESS },
+                    failed = quarterWants.count { it.status == Status.FAILED }
+                )
+            }
+        }
         item(key = "summary") {
             Text(
                 "${filtered.size} want${if (filtered.size == 1) "" else "s"}" +
@@ -276,14 +291,15 @@ private fun ListView(
             )
         }
 
-        fun cardFor(w: WantEntity): @Composable () -> Unit = {
+        fun cardFor(w: WantEntity, m: Modifier): @Composable () -> Unit = {
             WantCard(
                 want = w,
                 category = catById[w.categoryId],
                 onClick = { nav.navigate(Routes.detail(w.id)) },
                 onStatus = { requester.request(w, it) },
                 onEdit = { nav.navigate(Routes.form(w.id)) },
-                onMoveQuarter = { vm.moveToQuarter(w.id, thisQuarter) }
+                onMoveQuarter = { vm.moveToQuarter(w.id, thisQuarter) },
+                modifier = m
             )
         }
 
@@ -294,9 +310,14 @@ private fun ListView(
                 val group = filtered.filter { it.plannedKey == key }
                     .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
                 item(key = "h_${key?.label ?: "none"}") {
-                    SectionHeader(key?.label ?: "Unplanned", group.size, highlight = key == thisQuarter)
+                    SectionHeader(
+                        key?.label ?: "Unplanned",
+                        group.size,
+                        highlight = key == thisQuarter,
+                        total = group.sumOf { it.price }
+                    )
                 }
-                items(group, key = { it.id }) { w -> cardFor(w)() }
+                items(group, key = { it.id }) { w -> cardFor(w, Modifier.animateItem())() }
             }
         } else {
             val sorted = when (sort) {
@@ -305,7 +326,7 @@ private fun ListView(
                 SortMode.PRICE_LOW -> filtered.sortedBy { it.price }
                 else -> filtered.sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
             }
-            items(sorted, key = { it.id }) { w -> cardFor(w)() }
+            items(sorted, key = { it.id }) { w -> cardFor(w, Modifier.animateItem())() }
         }
     }
 }
