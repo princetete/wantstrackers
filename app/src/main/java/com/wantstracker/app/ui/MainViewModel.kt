@@ -103,7 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val msg = try {
                 val names = categories.associate { it.id to it.name }
-                fun csv(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
+            fun csv(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
                 val headers = listOf("Name","Price","Link","Notes","Category","Priority","Planned Year","Planned Quarter","Status","Date Added","Date Bought","Date Failed","Failure Reason")
                 val lines = mutableListOf(headers.joinToString(",") { csv(it) })
                 wants.forEach { w ->
