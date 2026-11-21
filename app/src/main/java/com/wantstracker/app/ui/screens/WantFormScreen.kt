@@ -151,8 +151,8 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
             TopAppBar(
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Text(if (isNew) "Add want" else "Edit want", fontWeight = FontWeight.Bold)
-                        Text("Keep your wishlist organised", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text(if (isNew) "Create your want" else "Refine your want", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                        Text("Add the details and make a plan", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {
@@ -188,10 +188,10 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
         }
     ) { padding ->
         Column(
-            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = 8.dp),
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            FormSection("The want", "Start with a name and an estimated price.") {
+            FormSection("01  ·  The want", "Start with a name and an estimated price.") {
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
                     label = { Text("What do you want?") },
@@ -207,7 +207,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 )
             }
 
-            FormSection("Category", "Group similar wants together.") {
+            FormSection("02  ·  Category", "Group similar wants together.") {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
                     categories.forEach { c ->
@@ -221,7 +221,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 }
             }
 
-            FormSection("Priority", "Choose how important this want is.") {
+            FormSection("03  ·  Priority", "Choose how important this want is.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Priority.entries.forEach { p ->
                         FilterChip(
@@ -233,7 +233,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 }
             }
 
-            FormSection("Plan", "Choose when you want to get it.") {
+            FormSection("04  ·  Plan", "Choose when you want to get it.") {
                 QuarterPicker(plannedYear, plannedQuarter) { y, q ->
                     plannedYear = y
                     plannedQuarter = q
@@ -241,7 +241,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
             }
 
             if (isNew) {
-                FormSection("Progress", "Set the current status of this want.") {
+                FormSection("05  ·  Progress", "Set the current status of this want.") {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Status.entries.forEach { statusOption ->
                             FilterChip(
@@ -287,7 +287,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 }
             }
 
-            FormSection("Extra details", "Add a product link or anything you want to remember.") {
+            FormSection("More details", "Add a product link or anything you want to remember.") {
                 OutlinedTextField(
                     value = link, onValueChange = { link = it },
                     label = { Text("Link (optional)") }, singleLine = true,
