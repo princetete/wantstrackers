@@ -137,8 +137,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 withContext(Dispatchers.IO) {
                     app.contentResolver.openOutputStream(uri, "wt")!!.use { XlsxSheet.write(it, rows) }
                 }
-                "Exported \${wants.size} wants to Excel"
-            } catch (e: Exception) { "Excel export failed: \${e.message}" }
+                "Exported ${wants.size} wants to Excel"
+            } catch (e: Exception) { "Excel export failed: ${e.message}" }
             onDone(msg)
         }
     }
@@ -151,7 +151,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val matrix = app.contentResolver.openInputStream(uri)?.use { XlsxSheet.read(it) }
                 ?: error("Unable to open Excel file")
             fun csv(v: String) = "\\"" + v.replace("\\"", "\\"\\"") + "\\""
-            matrix.joinToString("\\n") { row -> row.joinToString(",") { csv(it) } }
+            matrix.joinToString("\n") { row -> row.joinToString(",") { csv(it) } }
         } else {
             app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
         }
