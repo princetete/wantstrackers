@@ -155,13 +155,13 @@ fun WantCard(
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.Top) {
-                WantThumb(want, category, size = if (compact) 44 else 56)
+                WantThumb(want, category, size = if (compact) 48 else 60)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
