@@ -24,10 +24,10 @@ object XlsxSheet {
             val sheet = buildString {
                 append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>""")
                 rows.forEachIndexed { ri, row ->
-                    append("<row r=\"\${ri + 1}\">")
+                    append("<row r=\"${ri + 1}\">")
                     row.forEachIndexed { ci, value ->
                         val ref = columnName(ci + 1) + (ri + 1)
-                        append("<c r=\"\$ref\" t=\"inlineStr\"><is><t xml:space=\"preserve\">\${escape(value)}</t></is></c>")
+                        append("<c r=\"\$ref\" t=\"inlineStr\"><is><t xml:space=\"preserve\">${escape(value)}</t></is></c>")
                     }
                     append("</row>")
                 }
