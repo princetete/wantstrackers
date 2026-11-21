@@ -59,12 +59,8 @@ import com.wantstracker.app.ui.StatusPill
 import com.wantstracker.app.ui.WantThumb
 import com.wantstracker.app.ui.rememberStatusRequester
 import com.wantstracker.app.ui.theme.statusColor
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import java.io.File
 
 @Composable
 fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
@@ -78,6 +74,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
     var confirmDelete by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Want", fontWeight = FontWeight.Bold) },
@@ -109,15 +106,6 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
             Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val file = if (w.imagePath.isNotBlank()) File(w.imagePath) else null
-            if (file != null && file.exists()) {
-                AsyncImage(
-                    model = file,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(20.dp))
-                )
-            }
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(w.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -131,7 +119,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                 }
             }
 
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
                     InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
@@ -174,7 +162,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
 
             if (w.isOverdue()) {
                 val now = QuarterKey.now()
-                Card(Modifier.fillMaxWidth()) {
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Overdue — planned for ${w.plannedKey?.label}",
