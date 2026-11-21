@@ -155,8 +155,8 @@ class Repository(private val context: Context, val db: AppDatabase) {
                     price = r.price,
                     link = r.link,
                     notes = r.note,
+                    emoji = r.emoji,
                     priority = when (r.priority.trim().lowercase()) {
-                        "need" -> Priority.NEED
                         "someday" -> Priority.SOMEDAY
                         else -> Priority.WANT
                     },
