@@ -127,12 +127,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val msg = try {
                 val names = categories.associate { it.id to it.name }
                 val rows = mutableListOf(
-                    listOf("Name","Price","Link","Notes","Category","Priority","Planned Year","Planned Quarter","Status","Date Added","Date Bought","Date Failed","Failure Reason")
+                    listOf("Name","Price","Link","Notes","Category","Priority","Planned Year","Planned Quarter","Status","Date Added","Date Bought","Date Failed","Paid Price","Failure Reason")
                 )
                 wants.forEach { w ->
                     rows.add(listOf(w.name,w.price.toString(),w.link,w.notes,names[w.categoryId].orEmpty(),w.priority.label,
                         w.plannedYear?.toString().orEmpty(),w.plannedQuarter?.let { "Q$it" }.orEmpty(),w.status.label,
-                        w.addedAt.toString(),w.boughtAt?.toString().orEmpty(),w.failedAt?.toString().orEmpty(),w.failReason))
+                        w.addedAt.toString(),w.boughtAt?.toString().orEmpty(),w.failedAt?.toString().orEmpty(),w.pricePaid?.toString().orEmpty(),w.failReason))
                 }
                 withContext(Dispatchers.IO) {
                     app.contentResolver.openOutputStream(uri, "wt")!!.use { XlsxSheet.write(it, rows) }
