@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Wants Tracker</string>
+    <string name="widget_desc">Your top want and progress at a glance</string>
+</resources>
