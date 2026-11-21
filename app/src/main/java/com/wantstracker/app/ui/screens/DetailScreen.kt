@@ -137,7 +137,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
                     Text("Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
-                    InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
+                    InfoRow("Priority", "${if (w.priority == com.wantstracker.app.domain.Priority.NEED) "✨" else w.priority.emoji} ${if (w.priority == com.wantstracker.app.domain.Priority.NEED) "Want" else w.priority.label}")
                     InfoRow("Planned", w.plannedKey?.label ?: "Unplanned")
                     InfoRow("Added", formatDate(w.addedAt))
                 }
