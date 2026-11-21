@@ -376,7 +376,7 @@ private fun ListView(
 @Composable
 private fun TableView(wants: List<WantEntity>, nav: NavController) {
     LazyColumn(
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp).let { it.copy(bottom = 96.dp) },
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
         item {
