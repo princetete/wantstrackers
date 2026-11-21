@@ -142,14 +142,19 @@ class Repository(private val context: Context, val db: AppDatabase) {
                 }
                 val q = r.quarter
                 val closed = r.status == Status.BOUGHT || r.status == Status.FAILED
-                val doneAt = if (q == null) now else q.midMillis().coerceAtMost(now)
+                val importedDoneAt = when (r.status) {
+                    Status.BOUGHT -> r.dateBought
+                    Status.FAILED -> r.dateFailed
+                    else -> null
+                }
+                val doneAt = importedDoneAt ?: if (q == null) now else q.midMillis().coerceAtMost(now)
                 val start = q?.startMillis()?.takeIf { it < now } ?: now
-                val addedAt = if (closed) minOf(start, doneAt) else start
+                val addedAt = r.dateAdded ?: if (closed) minOf(start, doneAt) else start
                 val w = WantEntity(
                     name = r.name,
                     price = r.price,
                     link = r.link,
-                    notes = if (r.status == Status.FAILED) "" else r.note,
+                    notes = r.note,
                     priority = when (r.priority.trim().lowercase()) {
                         "need" -> Priority.NEED
                         "someday" -> Priority.SOMEDAY
@@ -159,8 +164,8 @@ class Repository(private val context: Context, val db: AppDatabase) {
                     plannedYear = q?.year,
                     plannedQuarter = q?.quarter,
                     status = r.status,
-                    failReason = if (r.status == Status.FAILED) r.note else "",
-                    pricePaid = if (r.status == Status.BOUGHT) r.price else null,
+                    failReason = if (r.status == Status.FAILED) r.failureReason.ifBlank { r.note } else "",
+                    pricePaid = if (r.status == Status.BOUGHT) (r.pricePaid ?: r.price) else null,
                     addedAt = addedAt,
                     boughtAt = if (r.status == Status.BOUGHT) doneAt else null,
                     failedAt = if (r.status == Status.FAILED) doneAt else null,
