@@ -58,7 +58,7 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
 
     val all = wantsOrNull ?: emptyList()
     val thisYear = QuarterKey.now().year
-    val years = (all.map { it.effectiveKey.year } + thisYear).distinct().sortedDescending()
+    val years = (all.map { it.effectiveKey.year } + thisYear).distinct().filter { it > 2024 }.sortedDescending()
     val scoped = all.filter { year == null || it.effectiveKey.year == year }
     val bought = scoped.filter { it.status == Status.BOUGHT }
     val failed = scoped.filter { it.status == Status.FAILED }
