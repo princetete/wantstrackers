@@ -137,7 +137,7 @@ fun WantThumb(want: WantEntity, category: CategoryEntity?, size: Int = 56) {
         Modifier.size(size.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.16f)),
         contentAlignment = Alignment.Center
     ) {
-        Text(category?.emoji ?: "🛍️", fontSize = (size / 2).sp)
+        Text(want.emoji, fontSize = (size / 2).sp)
     }
 }
 
@@ -179,7 +179,7 @@ fun WantCard(
                         Text(priceText, style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         Text(buildString {
-                            append(want.priority.label)
+                            append(if (want.priority == com.wantstracker.app.domain.Priority.NEED) "Want" else want.priority.label)
                             if (category != null) append("  ·  ${category.name}")
                             want.plannedKey?.let { append("  ·  ${it.label}") }
                         }, style = MaterialTheme.typography.labelSmall,
@@ -288,14 +288,12 @@ fun EmptyState(
 @Composable
 fun QuarterPicker(year: Int?, quarter: Int?, onChange: (Int?, Int?) -> Unit) {
     val now = QuarterKey.now()
-    val years = (now.year - 6)..(now.year + 3)
+    val years = 2025..(now.year + 3)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = year == null,
-                onClick = { onChange(null, null) },
-                label = { Text("Unplanned") }
-            )
+        Row(
+            Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             (1..4).forEach { q ->
                 FilterChip(
                     selected = quarter == q && year != null,
