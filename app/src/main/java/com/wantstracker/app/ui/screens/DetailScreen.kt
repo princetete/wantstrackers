@@ -77,7 +77,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Want details", fontWeight = FontWeight.Bold) },
+                title = { Text("Details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -133,9 +133,9 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                 }
             }
 
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Text("ABOUT THIS WANT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
                     InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
                     InfoRow("Planned", w.plannedKey?.label ?: "Unplanned")
