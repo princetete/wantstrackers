@@ -2,9 +2,6 @@
 
 package com.wantstracker.app.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +17,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -41,11 +42,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.wantstracker.app.data.CategoryEntity
+import com.wantstracker.app.data.Defaults
 import com.wantstracker.app.data.WantEntity
 import com.wantstracker.app.domain.Priority
 import com.wantstracker.app.domain.QuarterKey
@@ -55,9 +58,6 @@ import com.wantstracker.app.ui.CategoryEditDialog
 import com.wantstracker.app.ui.DateField
 import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.QuarterPicker
-import com.wantstracker.app.ui.WantThumb
-import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun WantFormScreen(vm: MainViewModel, nav: NavController, id: Long) {
@@ -74,7 +74,6 @@ fun WantFormScreen(vm: MainViewModel, nav: NavController, id: Long) {
 @Composable
 private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEntity?) {
     val categories by vm.categories.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val isNew = initial == null
 
     var name by rememberSaveable { mutableStateOf(initial?.name ?: "") }
@@ -84,10 +83,10 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     var link by rememberSaveable { mutableStateOf(initial?.link ?: "") }
     var notes by rememberSaveable { mutableStateOf(initial?.notes ?: "") }
     var categoryId by rememberSaveable { mutableStateOf<Long?>(initial?.categoryId) }
-    var priority by rememberSaveable { mutableStateOf(initial?.priority ?: Priority.WANT) }
-    var plannedYear by rememberSaveable { mutableStateOf<Int?>(initial?.plannedYear) }
-    var plannedQuarter by rememberSaveable { mutableStateOf<Int?>(initial?.plannedQuarter) }
-    var imagePath by rememberSaveable { mutableStateOf(initial?.imagePath ?: "") }
+    var wantEmoji by rememberSaveable { mutableStateOf(initial?.emoji ?: "🛍️") }
+    var priority by rememberSaveable { mutableStateOf(initial?.priority?.takeUnless { it == Priority.NEED } ?: Priority.WANT) }
+    var plannedYear by rememberSaveable { mutableStateOf<Int?>(initial?.plannedYear ?: if (initial == null) QuarterKey.now().year else null) }
+    var plannedQuarter by rememberSaveable { mutableStateOf<Int?>(initial?.plannedQuarter ?: if (initial == null) 1 else null) }
     var status by rememberSaveable { mutableStateOf(initial?.status ?: Status.NOT_STARTED) }
     var paidText by rememberSaveable {
         mutableStateOf(initial?.pricePaid?.let { plainNumber(it) } ?: "")
@@ -96,9 +95,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     var failReason by rememberSaveable { mutableStateOf("") }
     var showNewCategory by remember { mutableStateOf(false) }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch { vm.saveImage(uri)?.let { imagePath = it } }
-    }
+
 
     val canSave = name.isNotBlank() && !(isNew && status == Status.FAILED && failReason.isBlank())
 
@@ -112,11 +109,11 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     price = price,
                     link = link.trim(),
                     notes = notes.trim(),
+                    emoji = wantEmoji,
                     priority = priority,
                     categoryId = categoryId,
                     plannedYear = plannedYear,
                     plannedQuarter = plannedQuarter,
-                    imagePath = imagePath,
                     pricePaid = if (initial.status == Status.BOUGHT) {
                         paidText.replace(",", "").toDoubleOrNull() ?: initial.pricePaid
                     } else initial.pricePaid
@@ -134,8 +131,8 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     name = name.trim(),
                     price = price,
                     link = link.trim(),
-                    imagePath = imagePath,
                     notes = notes.trim(),
+                    emoji = wantEmoji,
                     priority = priority,
                     categoryId = categoryId,
                     plannedYear = plannedYear,
@@ -153,129 +150,160 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Add want" else "Edit want", fontWeight = FontWeight.Bold) },
+                title = {
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(if (isNew) "Add want" else "Edit want", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = { TextButton(enabled = canSave, onClick = { save() }) { Text("Save") } }
+                actions = {}
             )
+        },
+        bottomBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 0.dp
+            ) {
+                Button(
+                    onClick = { save() },
+                    enabled = canSave,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(48.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) { Text(if (isNew) "Add want" else "Save changes") }
+            }
         }
     ) { padding ->
         Column(
-            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = name, onValueChange = { name = it },
-                label = { Text("What do you want?") },
-                singleLine = true, modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = priceText, onValueChange = { priceText = it },
-                label = { Text("Price (₹)") }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text("Category", style = MaterialTheme.typography.titleSmall)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
-                categories.forEach { c ->
-                    FilterChip(
-                        selected = categoryId == c.id,
-                        onClick = { categoryId = c.id },
-                        label = { Text("${c.emoji} ${c.name}") }
-                    )
-                }
-                FilterChip(selected = false, onClick = { showNewCategory = true }, label = { Text("＋ New") })
-            }
-
-            Text("Priority", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Priority.entries.forEach { p ->
-                    FilterChip(
-                        selected = priority == p,
-                        onClick = { priority = p },
-                        label = { Text("${p.emoji} ${p.label}") }
-                    )
-                }
-            }
-
-            Text("Planned for", style = MaterialTheme.typography.titleSmall)
-            QuarterPicker(plannedYear, plannedQuarter) { y, q ->
-                plannedYear = y
-                plannedQuarter = q
-            }
-
-            if (isNew) {
-                Text("Status", style = MaterialTheme.typography.titleSmall)
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Status.entries.forEach { s ->
-                        FilterChip(
-                            selected = status == s,
-                            onClick = { status = s },
-                            label = { Text("${s.emoji} ${s.label}") }
-                        )
-                    }
-                }
-                if (status == Status.BOUGHT) {
-                    OutlinedTextField(
-                        value = paidText, onValueChange = { paidText = it },
-                        label = { Text("Price paid (₹) — blank = listed price") }, singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                if (status == Status.BOUGHT || status == Status.FAILED) {
-                    DateField(
-                        if (status == Status.BOUGHT) "Bought on" else "Failed on",
-                        doneAt, { doneAt = it }
-                    )
-                }
-                if (status == Status.FAILED) {
-                    OutlinedTextField(
-                        value = failReason, onValueChange = { failReason = it },
-                        label = { Text("Why did it fail? (required)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            } else if (initial?.status == Status.BOUGHT) {
+            FormSection("01  ·  The want", "Start with a name and an estimated price.") {
                 OutlinedTextField(
-                    value = paidText, onValueChange = { paidText = it },
-                    label = { Text("Price paid (₹)") }, singleLine = true,
+                    value = name, onValueChange = { name = it },
+                    label = { Text("What do you want?") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                OutlinedTextField(
+                    value = priceText, onValueChange = { priceText = it },
+                    label = { Text("Price (₹)") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
                 )
             }
 
-            OutlinedTextField(
-                value = link, onValueChange = { link = it },
-                label = { Text("Link (optional)") }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = notes, onValueChange = { notes = it },
-                label = { Text("Notes") }, minLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text("Photo", style = MaterialTheme.typography.titleSmall)
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (imagePath.isNotBlank() && File(imagePath).exists()) {
-                    WantThumb(WantEntity(name = name, imagePath = imagePath, addedAt = 0, lastStatusChangeAt = 0), null, size = 72)
-                }
-                OutlinedButton(onClick = {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text(if (imagePath.isBlank()) "Add photo" else "Change photo") }
-                if (imagePath.isNotBlank()) {
-                    TextButton(onClick = { imagePath = "" }) { Text("Remove") }
+            FormSection("02  ·  Emoji", "Choose an icon for this want. It is independent of category.") {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Defaults.emojiChoices.forEach { emoji ->
+                        FilterChip(selected = wantEmoji == emoji, onClick = { wantEmoji = emoji }, label = { Text(emoji) })
+                    }
                 }
             }
+
+            FormSection("03  ·  Category", "Group similar wants together.") {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
+                    categories.forEach { c ->
+                        FilterChip(
+                            selected = categoryId == c.id,
+                            onClick = { categoryId = c.id },
+                            label = { Text("${c.emoji} ${c.name}") }
+                        )
+                    }
+                    FilterChip(selected = false, onClick = { showNewCategory = true }, label = { Text("＋ New") })
+                }
+            }
+
+            FormSection("04  ·  Priority", "Choose how important this want is.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Priority.entries.filter { it != Priority.NEED }.forEach { p ->
+                        FilterChip(
+                            selected = priority == p,
+                            onClick = { priority = p },
+                            label = { Text("${p.emoji} ${p.label}") }
+                        )
+                    }
+                }
+            }
+
+            FormSection("05  ·  Plan", "Choose when you want to get it.") {
+                QuarterPicker(plannedYear, plannedQuarter) { y, q ->
+                    plannedYear = y
+                    plannedQuarter = q
+                }
+            }
+
+            if (isNew) {
+                FormSection("06  ·  Progress", "Set the current status of this want.") {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Status.entries.forEach { statusOption ->
+                            FilterChip(
+                                selected = status == statusOption,
+                                onClick = { status = statusOption },
+                                label = { Text("${statusOption.emoji} ${statusOption.label}") }
+                            )
+                        }
+                    }
+                    if (status == Status.BOUGHT) {
+                        OutlinedTextField(
+                            value = paidText, onValueChange = { paidText = it },
+                            label = { Text("Price paid (₹) — blank = listed price") }, singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                    if (status == Status.BOUGHT || status == Status.FAILED) {
+                        DateField(
+                            if (status == Status.BOUGHT) "Bought on" else "Failed on",
+                            doneAt, { doneAt = it }
+                        )
+                    }
+                    if (status == Status.FAILED) {
+                        OutlinedTextField(
+                            value = failReason, onValueChange = { failReason = it },
+                            label = { Text("Why did it fail? (required)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                }
+            } else if (initial?.status == Status.BOUGHT) {
+                FormSection("Purchase", "Record what you actually paid.") {
+                    OutlinedTextField(
+                        value = paidText, onValueChange = { paidText = it },
+                        label = { Text("Price paid (₹)") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            }
+
+            FormSection("More details", "Add a product link or anything you want to remember.") {
+                OutlinedTextField(
+                    value = link, onValueChange = { link = it },
+                    label = { Text("Link (optional)") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                OutlinedTextField(
+                    value = notes, onValueChange = { notes = it },
+                    label = { Text("Notes") }, minLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -289,5 +317,25 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 showNewCategory = false
             }
         )
+    }
+}
+
+@Composable
+private fun FormSection(title: String, subtitle: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            content()
+        }
     }
 }
