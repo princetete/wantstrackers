@@ -339,15 +339,30 @@ private fun ListView(
         }
 
         if (sort == SortMode.QUARTER) {
-            val keys: List<QuarterKey?> = filtered.mapNotNull { it.plannedKey }.distinct().sorted() +
-                (if (filtered.any { it.plannedKey == null }) listOf<QuarterKey?>(null) else emptyList())
-            keys.forEach { key ->
-                val group = filtered.filter { it.plannedKey == key }
-                    .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
-                item(key = "h_${key?.label ?: "none"}") {
-                    SectionHeader(key?.label ?: "Unplanned", group.size, highlight = key == thisQuarter)
+            val planned = filtered.filter { it.plannedKey != null }
+            val years = planned.mapNotNull { it.plannedKey?.year }.distinct().sorted()
+            years.forEach { year ->
+                val yearItems = planned.filter { it.plannedKey?.year == year }
+                item(key = "year_$year") {
+                    SectionHeader("Year $year", yearItems.size, highlight = year == thisQuarter.year)
                 }
-                items(group, key = { it.id }) { w -> cardFor(w)() }
+                val quarters = yearItems.mapNotNull { it.plannedKey }.distinct().sorted()
+                quarters.forEach { key ->
+                    val group = yearItems.filter { it.plannedKey == key }
+                        .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
+                    item(key = "quarter_${key.year}_${key.quarter}") {
+                        SectionHeader("  Q${key.quarter}", group.size, highlight = key == thisQuarter)
+                    }
+                    items(group, key = { it.id }) { w -> cardFor(w)() }
+                }
+            }
+            val unplanned = filtered.filter { it.plannedKey == null }
+                .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
+            if (unplanned.isNotEmpty()) {
+                item(key = "year_unplanned") {
+                    SectionHeader("Unplanned", unplanned.size)
+                }
+                items(unplanned, key = { it.id }) { w -> cardFor(w)() }
             }
         } else {
             val sorted = when (sort) {
