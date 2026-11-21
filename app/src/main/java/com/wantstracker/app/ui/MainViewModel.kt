@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.wantstracker.app.WantsApp
 import com.wantstracker.app.backup.Backup
 import com.wantstracker.app.backup.ImportRow
+import com.wantstracker.app.backup.XlsxSheet
 import com.wantstracker.app.data.CategoryEntity
 import com.wantstracker.app.data.Images
 import com.wantstracker.app.data.StatusLogEntity
@@ -117,6 +118,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Exported ${wants.size} wants to CSV"
             } catch (e: Exception) { "CSV export failed: ${e.message}" }
             onDone(msg)
+        }
+    }
+
+
+    fun exportXlsx(uri: Uri, wants: List<WantEntity>, categories: List<CategoryEntity>, onDone: (String) -> Unit) {
+        viewModelScope.launch {
+            val msg = try {
+                val names = categories.associate { it.id to it.name }
+                val rows = mutableListOf(
+                    listOf("Name","Price","Link","Notes","Category","Priority","Planned Year","Planned Quarter","Status","Date Added","Date Bought","Date Failed","Failure Reason")
+                )
+                wants.forEach { w ->
+                    rows.add(listOf(w.name,w.price.toString(),w.link,w.notes,names[w.categoryId].orEmpty(),w.priority.label,
+                        w.plannedYear?.toString().orEmpty(),w.plannedQuarter?.let { "Q$it" }.orEmpty(),w.status.label,
+                        w.addedAt.toString(),w.boughtAt?.toString().orEmpty(),w.failedAt?.toString().orEmpty(),w.failReason))
+                }
+                withContext(Dispatchers.IO) {
+                    app.contentResolver.openOutputStream(uri, "wt")!!.use { XlsxSheet.write(it, rows) }
+                }
+                "Exported \${wants.size} wants to Excel"
+            } catch (e: Exception) { "Excel export failed: \${e.message}" }
+            onDone(msg)
+        }
+    }
+
+    suspend fun readImportFile(uri: Uri): String = withContext(Dispatchers.IO) {
+        val mime = app.contentResolver.getType(uri).orEmpty()
+        val name = uri.lastPathSegment.orEmpty().lowercase()
+        val isXlsx = mime.contains("spreadsheetml") || name.endsWith(".xlsx")
+        if (isXlsx) {
+            val matrix = app.contentResolver.openInputStream(uri)?.use { XlsxSheet.read(it) }
+                ?: error("Unable to open Excel file")
+            fun csv(v: String) = "\\"" + v.replace("\\"", "\\"\\"") + "\\""
+            matrix.joinToString("\\n") { row -> row.joinToString(",") { csv(it) } }
+        } else {
+            app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
         }
     }
 
