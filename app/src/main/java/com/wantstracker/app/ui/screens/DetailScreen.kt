@@ -77,7 +77,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Want", fontWeight = FontWeight.Bold) },
+                title = { Text("Want details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -109,9 +109,9 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
 
             Card(
                 Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
                 Row(
@@ -119,13 +119,13 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    WantThumb(w, category, size = 68)
+                    WantThumb(w, category, size = 76)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(w.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(
                             if (w.price > 0) formatInr(w.price) else "No price set",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontWeight = FontWeight.Bold
                         )
                         StatusPill(w.status)
@@ -135,7 +135,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
 
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Text("Plan & details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("ABOUT THIS WANT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
                     InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
                     InfoRow("Planned", w.plannedKey?.label ?: "Unplanned")
