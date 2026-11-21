@@ -65,6 +65,7 @@ import com.wantstracker.app.domain.Status
 import com.wantstracker.app.domain.effectiveKey
 import com.wantstracker.app.domain.formatInr
 import com.wantstracker.app.domain.plannedKey
+import com.wantstracker.app.domain.isOverdue
 import com.wantstracker.app.ui.EmptyState
 import com.wantstracker.app.ui.MainBottomBar
 import com.wantstracker.app.ui.MainViewModel
@@ -130,8 +131,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                         )
                     } else {
                         Column {
-                            Text("Wants Tracker", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
-                            Text("Dream · Plan · Track", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text("Wants", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
                         }
                     }
                 },
@@ -217,35 +217,30 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterDropdown(
-                    label = "Status",
-                    selected = statusFilter?.let { "${it.emoji} ${it.label}" } ?: "All statuses",
-                    options = listOf("All statuses") + Status.entries.map { "${it.emoji} ${it.label}" },
-                    onSelect = { index -> statusFilter = if (index == 0) null else Status.entries[index - 1] }
-                )
-                FilterDropdown(
-                    label = "Year",
-                    selected = yearFilter?.toString() ?: "All years",
-                    options = listOf("All years") + years.map { it.toString() },
-                    onSelect = { index -> yearFilter = if (index == 0) null else years[index - 1] }
-                )
-                FilterDropdown(
-                    label = "Category",
-                    selected = categories.firstOrNull { it.id == categoryFilter }?.let { "${it.emoji} ${it.name}" } ?: "All categories",
-                    options = listOf("All categories") + categories.map { "${it.emoji} ${it.name}" },
-                    onSelect = { index -> categoryFilter = if (index == 0) null else categories[index - 1].id }
-                )
+                FilterChip(selected = statusFilter == null, onClick = { statusFilter = null },
+                    label = { Text("All · ${wants.size}") })
+                Status.entries.forEach { st ->
+                    val count = wants.count { it.status == st }
+                    FilterChip(selected = statusFilter == st, onClick = { statusFilter = if (statusFilter == st) null else st },
+                        label = { Text("${st.label} · $count") })
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterDropdown("Year", yearFilter?.toString() ?: "All years",
+                    listOf("All years") + years.map { it.toString() },
+                    { i -> yearFilter = if (i == 0) null else years[i - 1] })
+                FilterDropdown("Category",
+                    categories.firstOrNull { it.id == categoryFilter }?.let { "${it.emoji} ${it.name}" } ?: "All categories",
+                    listOf("All categories") + categories.map { "${it.emoji} ${it.name}" },
+                    { i -> categoryFilter = if (i == 0) null else categories[i - 1].id })
                 if (statusFilter != null || yearFilter != null || categoryFilter != null || priorityFilter != null) {
-                    FilterChip(
-                        selected = false,
-                        onClick = {
-                            statusFilter = null
-                            yearFilter = null
-                            categoryFilter = null
-                            priorityFilter = null
-                        },
-                        label = { Text("Clear") }
-                    )
+                    FilterChip(selected = false, onClick = {
+                        statusFilter = null; yearFilter = null; categoryFilter = null; priorityFilter = null
+                    }, label = { Text("Clear filters") })
                 }
             }
 
@@ -433,101 +428,34 @@ private fun BoardView(
 @Composable
 private fun DashboardSummary(wants: List<WantEntity>) {
     val bought = wants.count { it.status == Status.BOUGHT }
-    val progress = wants.count { it.status == Status.IN_PROGRESS }
-    val failed = wants.count { it.status == Status.FAILED }
-    val planned = wants.count { it.status == Status.NOT_STARTED }
-    val totalValue = wants.filter { it.status.isOpen }.sumOf { it.price }
-
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    val open = wants.filter { it.status.isOpen }
+    val overdue = open.count { it.isOverdue() }
+    val totalValue = open.sumOf { it.price }
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    "YOUR COLLECTION",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Wishlist overview",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Text(
-                "Dream · Plan · Track",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Column(
-                Modifier.fillMaxWidth().padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "TOTAL WANTS",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Text(
-                        wants.size.toString(),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "ESTIMATED TO BUY",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                        )
-                        Text(
-                            formatInr(totalValue),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-                androidx.compose.material3.LinearProgressIndicator(
-                    progress = { if (wants.isEmpty()) 0f else bought.toFloat() / wants.size },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
-                )
-                Text(
-                    "$bought of ${wants.size} wants completed",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f)
-                )
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+            Text("STILL TO BUY", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Medium)
+            Text(formatInr(totalValue), style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                SummaryCount(open.size, "open")
+                SummaryCount(bought, "bought")
+                SummaryCount(overdue, "overdue")
             }
         }
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            DashboardCount("Planned", planned, Color(0xFF8E8E9A), Modifier.weight(1f))
-            DashboardCount("In progress", progress, Color(0xFF3B82F6), Modifier.weight(1f))
-            DashboardCount("Bought", bought, Color(0xFF22A06B), Modifier.weight(1f))
-            DashboardCount("Failed", failed, Color(0xFFE5484D), Modifier.weight(1f))
-        }
+    }
+}
+@Composable
+private fun SummaryCount(value: Int, label: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text("$value", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(label, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f))
     }
 }
 
