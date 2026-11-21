@@ -31,7 +31,7 @@ object CsvImport {
                 return cells.getOrNull(idx)?.trim().orEmpty()
             }
             val name = field(setOf("name","title","item"), 0)
-            if (name.isBlank()) { warnings.add("Row \${index + 1}: missing name, skipped"); return@forEachIndexed }
+            if (name.isBlank()) { warnings.add("Row ${index + 1}: missing name, skipped"); return@forEachIndexed }
             val price = field(setOf("price"), 1).replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
             val year = field(setOf("planned year","year"), -1).toIntOrNull()
             val qText = field(setOf("planned quarter","quarter"), 2)
