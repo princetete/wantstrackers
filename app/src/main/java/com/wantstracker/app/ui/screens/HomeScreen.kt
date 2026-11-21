@@ -2,6 +2,7 @@
 
 package com.wantstracker.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
@@ -24,6 +27,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -59,13 +66,13 @@ import com.wantstracker.app.domain.Status
 import com.wantstracker.app.domain.effectiveKey
 import com.wantstracker.app.domain.formatInr
 import com.wantstracker.app.domain.plannedKey
+import com.wantstracker.app.domain.isOverdue
 import com.wantstracker.app.ui.EmptyState
 import com.wantstracker.app.ui.MainBottomBar
 import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.Routes
 import com.wantstracker.app.ui.SectionHeader
 import com.wantstracker.app.ui.StatusRequester
-import com.wantstracker.app.ui.SummaryCard
 import com.wantstracker.app.ui.WantCard
 import com.wantstracker.app.ui.rememberStatusRequester
 import com.wantstracker.app.ui.theme.statusColor
@@ -84,7 +91,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
     val categories by vm.categories.collectAsStateWithLifecycle()
     val requester = rememberStatusRequester(vm)
 
-    var board by rememberSaveable { mutableStateOf(false) }
+    var viewMode by rememberSaveable { mutableStateOf("cards") }
     var statusFilter by rememberSaveable { mutableStateOf<Status?>(null) }
     var categoryFilter by rememberSaveable { mutableStateOf<Long?>(null) }
     var yearFilter by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -97,7 +104,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
     val wants = wantsOrNull ?: emptyList()
     val catById = categories.associateBy { it.id }
     val thisQuarter = QuarterKey.now()
-    val years = (wants.map { it.effectiveKey.year } + thisQuarter.year).distinct().sortedDescending()
+    val years = (wants.map { it.effectiveKey.year } + thisQuarter.year).distinct().filter { it > 2024 }.sortedDescending()
 
     val base = wants
         .filter { categoryFilter == null || it.categoryId == categoryFilter }
@@ -124,7 +131,9 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                             )
                         )
                     } else {
-                        Text("Wants Tracker", fontWeight = FontWeight.Bold)
+                        Column {
+                            Text("Wants", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+                        }
                     }
                 },
                 actions = {
@@ -137,10 +146,10 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                             contentDescription = "Search"
                         )
                     }
-                    IconButton(onClick = { board = !board }) {
+                    IconButton(onClick = { viewMode = when (viewMode) { "cards" -> "table"; "table" -> "board"; else -> "cards" } }) {
                         Icon(
-                            if (board) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.ViewColumn,
-                            contentDescription = if (board) "List view" else "Board view"
+                            if (viewMode == "board") Icons.Filled.ViewColumn else Icons.AutoMirrored.Filled.ViewList,
+                            contentDescription = when (viewMode) { "cards" -> "Switch to table view"; "table" -> "Switch to board view"; else -> "Switch to card view" }
                         )
                     }
                     Box {
@@ -175,7 +184,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                                     menuOpen = false
                                 }
                             )
-                            Priority.entries.forEach { p ->
+                            Priority.entries.filter { it != Priority.NEED }.forEach { p ->
                                 DropdownMenuItem(
                                     text = { Text((if (priorityFilter == p) "✓ " else "    ") + "${p.emoji} ${p.label}") },
                                     onClick = {
@@ -186,7 +195,8 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                             }
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         bottomBar = { MainBottomBar(nav, Routes.HOME) },
@@ -194,49 +204,57 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
             ExtendedFloatingActionButton(
                 onClick = { nav.navigate(Routes.form(0)) },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Add want") }
+                text = { Text("Add want", fontWeight = FontWeight.SemiBold) },
+                shape = RoundedCornerShape(22.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            ChipRow {
-                FilterChip(selected = statusFilter == null, onClick = { statusFilter = null }, label = { Text("All") })
-                Status.entries.forEach { s ->
-                    FilterChip(
-                        selected = statusFilter == s,
-                        onClick = { statusFilter = if (statusFilter == s) null else s },
-                        label = { Text("${s.emoji} ${s.label}") }
-                    )
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(selected = statusFilter == null, onClick = { statusFilter = null },
+                    label = { Text("All · ${wants.size}") })
+                Status.entries.forEach { st ->
+                    val count = wants.count { it.status == st }
+                    FilterChip(selected = statusFilter == st, onClick = { statusFilter = if (statusFilter == st) null else st },
+                        label = { Text("${st.label} · $count") })
                 }
             }
-            ChipRow {
-                FilterChip(selected = yearFilter == null, onClick = { yearFilter = null }, label = { Text("All years") })
-                years.forEach { y ->
-                    FilterChip(
-                        selected = yearFilter == y,
-                        onClick = { yearFilter = if (yearFilter == y) null else y },
-                        label = { Text("$y") }
-                    )
-                }
-            }
-            if (categories.isNotEmpty()) {
-                ChipRow {
-                    categories.forEach { c ->
-                        FilterChip(
-                            selected = categoryFilter == c.id,
-                            onClick = { categoryFilter = if (categoryFilter == c.id) null else c.id },
-                            label = { Text("${c.emoji} ${c.name}") }
-                        )
-                    }
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterDropdown("Year", yearFilter?.toString() ?: "All years",
+                    listOf("All years") + years.map { it.toString() },
+                    { i -> yearFilter = if (i == 0) null else years[i - 1] })
+                FilterDropdown("Category",
+                    categories.firstOrNull { it.id == categoryFilter }?.let { "${it.emoji} ${it.name}" } ?: "All categories",
+                    listOf("All categories") + categories.map { "${it.emoji} ${it.name}" },
+                    { i -> categoryFilter = if (i == 0) null else categories[i - 1].id })
+                if (statusFilter != null || yearFilter != null || categoryFilter != null || priorityFilter != null) {
+                    FilterChip(selected = false, onClick = {
+                        statusFilter = null; yearFilter = null; categoryFilter = null; priorityFilter = null
+                    }, label = { Text("Clear filters") })
                 }
             }
 
             when {
                 wantsOrNull == null -> Spacer(Modifier.fillMaxSize())
-                wants.isEmpty() -> EmptyState("🛍️", "Nothing here yet", "Tap “Add want” to start your wishlist.")
-                filtered.isEmpty() && !board -> EmptyState("🔍", "No matches", "Try clearing some filters.")
-                board -> BoardView(base, catById, nav, vm, requester)
-                else -> ListView(wants, filtered, catById, nav, vm, requester, sort, thisQuarter)
+                wants.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    EmptyState("🛍️", "Your wishlist starts here", "Add the things you want to buy and organise them by year, quarter and priority.", "Add your first want") { nav.navigate(Routes.form(0)) }
+                }
+                filtered.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    EmptyState("🔍", "No matches found", "Try changing your search or filters.", "Clear filters") { statusFilter = null; yearFilter = null; categoryFilter = null; priorityFilter = null; query = "" }
+                }
+                viewMode == "board" -> BoardView(filtered, catById, nav, vm, requester)
+                viewMode == "table" -> TableView(filtered, nav)
+                else -> ListView(filtered, catById, nav, vm, requester, sort, thisQuarter)
             }
         }
     }
@@ -253,8 +271,35 @@ private fun ChipRow(content: @Composable () -> Unit) {
 }
 
 @Composable
+private fun FilterDropdown(
+    label: String,
+    selected: String,
+    options: List<String>,
+    onSelect: (Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilterChip(
+            selected = selected != options.firstOrNull(),
+            onClick = { expanded = true },
+            label = { Text("$label: $selected", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelect(index)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ListView(
-    all: List<WantEntity>,
     filtered: List<WantEntity>,
     catById: Map<Long, CategoryEntity>,
     nav: NavController,
@@ -264,23 +309,10 @@ private fun ListView(
     thisQuarter: QuarterKey
 ) {
     val pending = filtered.filter { it.status.isOpen }.sumOf { it.price }
-    val quarterWants = all.filter { it.plannedKey == thisQuarter }
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (quarterWants.isNotEmpty()) {
-            item(key = "quarter_summary") {
-                SummaryCard(
-                    quarterLabel = thisQuarter.label,
-                    spent = quarterWants.filter { it.status == Status.BOUGHT }.sumOf { it.pricePaid ?: it.price },
-                    planned = quarterWants.sumOf { it.price },
-                    bought = quarterWants.count { it.status == Status.BOUGHT },
-                    inProgress = quarterWants.count { it.status == Status.IN_PROGRESS },
-                    failed = quarterWants.count { it.status == Status.FAILED }
-                )
-            }
-        }
         item(key = "summary") {
             Text(
                 "${filtered.size} want${if (filtered.size == 1) "" else "s"}" +
@@ -291,33 +323,35 @@ private fun ListView(
             )
         }
 
-        fun cardFor(w: WantEntity, m: Modifier): @Composable () -> Unit = {
+        fun cardFor(w: WantEntity): @Composable () -> Unit = {
             WantCard(
                 want = w,
                 category = catById[w.categoryId],
                 onClick = { nav.navigate(Routes.detail(w.id)) },
                 onStatus = { requester.request(w, it) },
                 onEdit = { nav.navigate(Routes.form(w.id)) },
-                onMoveQuarter = { vm.moveToQuarter(w.id, thisQuarter) },
-                modifier = m
+                onMoveQuarter = { vm.moveToQuarter(w.id, thisQuarter) }
             )
         }
 
         if (sort == SortMode.QUARTER) {
-            val keys: List<QuarterKey?> = filtered.mapNotNull { it.plannedKey }.distinct().sorted() +
-                (if (filtered.any { it.plannedKey == null }) listOf<QuarterKey?>(null) else emptyList())
-            keys.forEach { key ->
-                val group = filtered.filter { it.plannedKey == key }
-                    .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
-                item(key = "h_${key?.label ?: "none"}") {
-                    SectionHeader(
-                        key?.label ?: "Unplanned",
-                        group.size,
-                        highlight = key == thisQuarter,
-                        total = group.sumOf { it.price }
-                    )
+            val planned = filtered.filter { it.plannedKey != null }
+            val years = planned.mapNotNull { it.plannedKey?.year }.distinct().sorted()
+            years.forEach { year ->
+                val yearItems = planned.filter { it.plannedKey?.year == year }
+                item(key = "year_$year") {
+                    SectionHeader("Year $year", yearItems.size, highlight = year == thisQuarter.year)
                 }
-                items(group, key = { it.id }) { w -> cardFor(w, Modifier.animateItem())() }
+                val quarters = yearItems.mapNotNull { it.plannedKey }.distinct().sorted()
+                quarters.forEach { key ->
+                    val group = yearItems.filter { it.plannedKey == key }
+                        .sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
+                    item(key = "quarter_${key.year}_${key.quarter}") {
+                        SectionHeader("  Q${key.quarter}", group.size, highlight = key == thisQuarter)
+                    }
+                    items(group, key = { it.id }) { w -> cardFor(w)() }
+                }
+            }
             }
         } else {
             val sorted = when (sort) {
@@ -326,7 +360,38 @@ private fun ListView(
                 SortMode.PRICE_LOW -> filtered.sortedBy { it.price }
                 else -> filtered.sortedWith(compareBy({ it.priority.ordinal }, { it.name.lowercase() }))
             }
-            items(sorted, key = { it.id }) { w -> cardFor(w, Modifier.animateItem())() }
+            items(sorted, key = { it.id }) { w -> cardFor(w)() }
+        }
+    }
+}
+
+@Composable
+private fun TableView(wants: List<WantEntity>, nav: NavController) {
+    LazyColumn(
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ) {
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
+                Text("Want", Modifier.weight(2.2f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Status", Modifier.weight(1.25f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Priority", Modifier.weight(1.1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Price", Modifier.weight(1.1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+            HorizontalDivider()
+        }
+        items(wants.sortedBy { it.name.lowercase() }, key = { it.id }) { w ->
+            Row(
+                Modifier.fillMaxWidth().clickable { nav.navigate(Routes.detail(w.id)) }
+                    .padding(horizontal = 8.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("${w.emoji} ${w.name}", Modifier.weight(2.2f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                Text(w.status.label, Modifier.weight(1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = statusColor(w.status))
+                Text(if (w.priority == Priority.NEED) "Want" else w.priority.label, Modifier.weight(1.1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+                Text(if (w.status == Status.BOUGHT && w.pricePaid != null) formatInr(w.pricePaid) else formatInr(w.price), Modifier.weight(1.1f), maxLines = 1, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.End, color = MaterialTheme.colorScheme.primary)
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         }
     }
 }
@@ -381,5 +446,49 @@ private fun BoardView(
                 }
             }
         }
+    }
+}
+
+ 
+@Composable
+private fun DashboardSummary(wants: List<WantEntity>) {
+    val bought = wants.count { it.status == Status.BOUGHT }
+    val open = wants.filter { it.status.isOpen }
+    val totalValue = open.sumOf { it.price }
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+            Text("STILL TO BUY", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Medium)
+            Text(formatInr(totalValue), style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                SummaryCount(open.size, "open")
+                SummaryCount(bought, "bought")
+            }
+        }
+    }
+}
+@Composable
+private fun SummaryCount(value: Int, label: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text("$value", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(label, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f))
+    }
+}
+
+@Composable
+private fun DashboardCount(label: String, count: Int, tint: Color, modifier: Modifier) {
+    Column(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("$count", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = tint)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
