@@ -161,7 +161,7 @@ class Repository(private val context: Context, val db: AppDatabase) {
                         else -> Priority.WANT
                     },
                     categoryId = catId,
-                    plannedYear = q?.year,
+                    plannedYear = r.plannedYear ?: q?.year,
                     plannedQuarter = q?.quarter,
                     status = r.status,
                     failReason = if (r.status == Status.FAILED) r.failureReason.ifBlank { r.note } else "",
