@@ -49,13 +49,13 @@ fun ImportScreen(vm: MainViewModel, nav: NavController) {
     val parsed = remember(text) { CsvImport.parse(text) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) scope.launch { text = vm.readText(uri) }
+        if (uri != null) scope.launch { text = vm.readImportFile(uri) }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Import old wants", fontWeight = FontWeight.Bold) },
+                title = { Text("Import wants", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -70,9 +70,9 @@ fun ImportScreen(vm: MainViewModel, nav: NavController) {
         ) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Format — one want per line", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Import from CSV or Excel", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "name, price, quarter, status, category, note",
+                        "Name · Price · Link · Notes · Category · Priority · Planned Year · Planned Quarter · Status",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -103,7 +103,7 @@ fun ImportScreen(vm: MainViewModel, nav: NavController) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Choose a CSV / text file") }
+            OutlinedButton(onClick = { picker.launch(arrayOf("text/*", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel")) }) { Text("Choose CSV or Excel (.xlsx)") }
 
             if (text.isNotBlank()) {
                 Card(Modifier.fillMaxWidth()) {
