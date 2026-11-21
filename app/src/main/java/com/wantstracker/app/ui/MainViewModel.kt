@@ -114,8 +114,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 withContext(Dispatchers.IO) {
                     app.contentResolver.openOutputStream(uri, "wt")!!.bufferedWriter().use { it.write(lines.joinToString("\n")) }
                 }
-                "Exported \${wants.size} wants to CSV"
-            } catch (e: Exception) { "CSV export failed: \${e.message}" }
+                "Exported ${wants.size} wants to CSV"
+            } catch (e: Exception) { "CSV export failed: ${e.message}" }
             onDone(msg)
         }
     }
