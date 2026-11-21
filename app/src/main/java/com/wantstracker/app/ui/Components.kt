@@ -298,7 +298,7 @@ fun QuarterPicker(year: Int?, quarter: Int?, onChange: (Int?, Int?) -> Unit) {
                 FilterChip(
                     selected = quarter == q && year != null,
                     onClick = { onChange(year ?: now.year, q) },
-                    label = { Text("Q$q") }
+                    label = { Text("Q$q", maxLines = 1, softWrap = false) }
                 )
             }
         }
