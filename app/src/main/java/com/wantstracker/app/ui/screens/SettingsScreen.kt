@@ -40,11 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.wantstracker.app.LockState
-import com.wantstracker.app.domain.formatDate
-import com.wantstracker.app.ui.ConfirmDialog
 import com.wantstracker.app.ui.MainBottomBar
 import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.Routes
@@ -60,19 +60,21 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
     val theme by vm.prefs.theme.collectAsStateWithLifecycle()
     val reminders by vm.prefs.remindersEnabled.collectAsStateWithLifecycle()
     val lock by vm.prefs.lockEnabled.collectAsStateWithLifecycle()
-    var confirmRestore by remember { mutableStateOf<android.net.Uri?>(null) }
+    val wants by vm.wants.collectAsStateWithLifecycle()
+    val categories by vm.categories.collectAsStateWithLifecycle()
 
     fun toast(msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
 
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) vm.exportTo(uri) { toast(it) }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) vm.exportCsv(uri, wants.orEmpty(), categories) { toast(it) }
     }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) confirmRestore = uri
+    val excelExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri ->
+        if (uri != null) vm.exportXlsx(uri, wants.orEmpty(), categories) { toast(it) }
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { TopAppBar(title = { Text("Settings", fontWeight = FontWeight.Bold) }) },
         bottomBar = { MainBottomBar(nav, Routes.SETTINGS) }
     ) { padding ->
@@ -121,21 +123,21 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
             Section("Manage") {
                 NavRow("🗂️  Categories") { nav.navigate(Routes.CATEGORIES) }
                 HorizontalDivider()
-                NavRow("📥  Import old wants (CSV / paste)") { nav.navigate(Routes.IMPORT) }
             }
 
-            Section("Backup") {
+            Section("Import & Export") {
                 Text(
-                    "Saves everything (including photos) to one file you can keep anywhere. Restoring replaces all current data.",
+                    "Import and export your wishlist using CSV or Excel (.xlsx). Includes names, listed and paid prices, links, notes, categories, priority, planned year and quarter, status, dates and failure reasons. No photos are included.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = {
-                        exportLauncher.launch("wants-tracker-backup-${formatDate(System.currentTimeMillis()).replace(' ', '-')}.json")
-                    }) { Text("Export backup") }
-                    OutlinedButton(onClick = { restoreLauncher.launch(arrayOf("*/*")) }) { Text("Restore backup") }
-                }
+                OutlinedButton(enabled = wants != null, onClick = {
+                    exportLauncher.launch("wants-tracker-${System.currentTimeMillis()}.csv")
+                }) { Text("Export CSV") }
+                OutlinedButton(enabled = wants != null, onClick = {
+                    excelExportLauncher.launch("wants-tracker-${System.currentTimeMillis()}.xlsx")
+                }) { Text("Export Excel (.xlsx)") }
+                NavRow("📥  Import CSV or Excel") { nav.navigate(Routes.IMPORT) }
             }
 
             Section("Widget") {
@@ -155,26 +157,18 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
         }
     }
 
-    confirmRestore?.let { uri ->
-        ConfirmDialog(
-            title = "Replace all data?",
-            text = "Everything currently in the app will be replaced by the backup. This can't be undone.",
-            confirmLabel = "Restore",
-            onDismiss = { confirmRestore = null },
-            onConfirm = {
-                confirmRestore = null
-                vm.restoreFrom(uri) { toast(it) }
-            }
-        )
-    }
 }
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
+        Card(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+        ) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
         }
     }
 }
