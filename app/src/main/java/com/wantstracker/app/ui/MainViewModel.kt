@@ -97,6 +97,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { onDone(repo.importRows(rows)) }
     }
 
+
+    fun exportCsv(uri: Uri, wants: List<WantEntity>, categories: List<CategoryEntity>, onDone: (String) -> Unit) {
+        viewModelScope.launch {
+            val msg = try {
+                val names = categories.associate { it.id to it.name }
+                fun csv(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
+                val headers = listOf("Name","Price","Link","Notes","Category","Priority","Planned Year","Planned Quarter","Status","Date Added","Date Bought","Date Failed","Failure Reason")
+                val lines = mutableListOf(headers.joinToString(",") { csv(it) })
+                wants.forEach { w ->
+                    val values = listOf(w.name,w.price.toString(),w.link,w.notes,names[w.categoryId].orEmpty(),w.priority.label,
+                        w.plannedYear?.toString().orEmpty(),w.plannedQuarter?.let { "Q$it" }.orEmpty(),w.status.label,
+                        w.addedAt.toString(),w.boughtAt?.toString().orEmpty(),w.failedAt?.toString().orEmpty(),w.failReason)
+                    lines.add(values.joinToString(",") { csv(it) })
+                }
+                withContext(Dispatchers.IO) {
+                    app.contentResolver.openOutputStream(uri, "wt")!!.bufferedWriter().use { it.write(lines.joinToString("\n")) }
+                }
+                "Exported \${wants.size} wants to CSV"
+            } catch (e: Exception) { "CSV export failed: \${e.message}" }
+            onDone(msg)
+        }
+    }
+
     fun exportTo(uri: Uri, onDone: (String) -> Unit) {
         viewModelScope.launch {
             val msg = try {
