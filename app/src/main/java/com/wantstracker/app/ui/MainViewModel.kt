@@ -150,7 +150,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (isXlsx) {
             val matrix = app.contentResolver.openInputStream(uri)?.use { XlsxSheet.read(it) }
                 ?: error("Unable to open Excel file")
-            fun csv(v: String) = "\\"" + v.replace("\\"", "\\"\\"") + "\\""
+            fun csv(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
             matrix.joinToString("\n") { row -> row.joinToString(",") { csv(it) } }
         } else {
             app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
