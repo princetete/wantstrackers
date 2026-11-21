@@ -20,7 +20,9 @@ class WantsApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        db = Room.databaseBuilder(this, AppDatabase::class.java, "wants.db").build()
+        db = Room.databaseBuilder(this, AppDatabase::class.java, "wants.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
         prefs = Prefs(this)
         repository = Repository(this, db)
         Notifier.createChannel(this)
