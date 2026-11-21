@@ -20,33 +20,35 @@ object CsvImport {
     fun parse(text: String): ParseResult {
         val rows = mutableListOf<ImportRow>()
         val warnings = mutableListOf<String>()
-        val lines = text.lines().filter { it.isNotBlank() }
-        if (lines.isEmpty()) return ParseResult(rows, warnings)
-        val first = splitLine(lines.first(), ',')
+        val source = text.removePrefix("\uFEFF")
+        if (source.isBlank()) return ParseResult(rows, warnings)
+        val firstRecord = source.substringBefore('\n')
+        val delimiter = when {
+            firstRecord.count { it == '\t' } > firstRecord.count { it == ',' } -> '\t'
+            firstRecord.count { it == ';' } > firstRecord.count { it == ',' } -> ';'
+            firstRecord.contains('|') && !firstRecord.contains(',') -> '|'
+            else -> ','
+        }
+        val records = parseRecords(source, delimiter).filter { record -> record.any { it.isNotBlank() } }
+        if (records.isEmpty()) return ParseResult(rows, warnings)
+        val first = records.first()
         val hasHeader = first.firstOrNull()?.trim()?.lowercase() in setOf("name", "title", "item")
-        val headers = if (hasHeader) first.map { it.trim().lowercase() } else emptyList()
-        (if (hasHeader) lines.drop(1) else lines).forEachIndexed { index, line ->
-            val delimiter = when {
-                line.contains('\t') -> '\t'
-                line.count { it == ';' } > line.count { it == ',' } -> ';'
-                line.contains('|') && !line.contains(',') -> '|'
-                else -> ','
-            }
-            val cells = splitLine(line, delimiter)
+        val headers = if (hasHeader) first.map { it.trim().lowercase().removePrefix("\uFEFF") } else emptyList()
+        (if (hasHeader) records.drop(1) else records).forEachIndexed { index, cells ->
             fun field(names: Set<String>, fallback: Int): String {
                 val idx = if (hasHeader) headers.indexOfFirst { it in names } else fallback
                 return cells.getOrNull(idx)?.trim().orEmpty()
             }
-            val name = field(setOf("name","title","item"), 0)
+            val name = field(setOf("name", "title", "item"), 0)
             if (name.isBlank()) { warnings.add("Row ${index + 1}: missing name, skipped"); return@forEachIndexed }
             val price = field(setOf("price"), 1).replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
-            val year = field(setOf("planned year","year"), -1).toIntOrNull()
-            val qText = field(setOf("planned quarter","quarter"), 2)
+            val year = field(setOf("planned year", "year"), -1).toIntOrNull()
+            val qText = field(setOf("planned quarter", "quarter"), 2)
             val quarter = QuarterKey.parse(qText) ?: if (year != null && qText.matches(Regex("[1-4]"))) QuarterKey(year, qText.toInt()) else null
             val status = Status.fromText(field(setOf("status"), 3))
             val category = field(setOf("category"), 4)
-            val note = field(setOf("notes","note"), 5)
-            val link = field(setOf("link","url"), 6)
+            val note = field(setOf("notes", "note"), 5)
+            val link = field(setOf("link", "url"), 6)
             val priority = field(setOf("priority"), 7).ifBlank { "Want" }
             val dateAdded = field(setOf("date added", "added at"), -1).toLongOrNull()
             val dateBought = field(setOf("date bought", "bought at"), -1).toLongOrNull()
@@ -56,6 +58,30 @@ object CsvImport {
             rows.add(ImportRow(name, price, quarter, status, category, note, link, priority, dateAdded, dateBought, dateFailed, failureReason, pricePaid))
         }
         return ParseResult(rows, warnings)
+    }
+
+    private fun parseRecords(text: String, delimiter: Char): List<List<String>> {
+        val records = mutableListOf<List<String>>()
+        val record = mutableListOf<String>()
+        val cell = StringBuilder()
+        var quoted = false
+        var i = 0
+        while (i < text.length) {
+            val ch = text[i]
+            when {
+                ch == '"' && quoted && i + 1 < text.length && text[i + 1] == '"' -> { cell.append('"'); i++ }
+                ch == '"' -> quoted = !quoted
+                ch == delimiter && !quoted -> { record.add(cell.toString()); cell.clear() }
+                (ch == '\n' || ch == '\r') && !quoted -> {
+                    record.add(cell.toString()); cell.clear(); records.add(record.toList()); record.clear()
+                    if (ch == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++
+                }
+                else -> cell.append(ch)
+            }
+            i++
+        }
+        if (cell.isNotEmpty() || record.isNotEmpty()) { record.add(cell.toString()); records.add(record.toList()) }
+        return records
     }
     private fun splitLine(line: String, delimiter: Char): List<String> {
         val out = mutableListOf<String>(); val cur = StringBuilder(); var quoted = false; var i = 0
