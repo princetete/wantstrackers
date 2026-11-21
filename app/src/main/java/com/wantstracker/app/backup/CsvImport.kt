@@ -5,7 +5,9 @@ import com.wantstracker.app.domain.Status
 
 data class ImportRow(
     val name: String, val price: Double, val quarter: QuarterKey?, val status: Status,
-    val category: String, val note: String, val link: String = "", val priority: String = "Want"
+    val category: String, val note: String, val link: String = "", val priority: String = "Want",
+    val dateAdded: Long? = null, val dateBought: Long? = null, val dateFailed: Long? = null,
+    val failureReason: String = "", val pricePaid: Double? = null
 )
 data class ParseResult(val rows: List<ImportRow>, val warnings: List<String>)
 
@@ -46,7 +48,12 @@ object CsvImport {
             val note = field(setOf("notes","note"), 5)
             val link = field(setOf("link","url"), 6)
             val priority = field(setOf("priority"), 7).ifBlank { "Want" }
-            rows.add(ImportRow(name, price, quarter, status, category, note, link, priority))
+            val dateAdded = field(setOf("date added", "added at"), -1).toLongOrNull()
+            val dateBought = field(setOf("date bought", "bought at"), -1).toLongOrNull()
+            val dateFailed = field(setOf("date failed", "failed at"), -1).toLongOrNull()
+            val failureReason = field(setOf("failure reason", "fail reason"), -1)
+            val pricePaid = field(setOf("paid price", "price paid"), -1).replace(Regex("[^0-9.]"), "").toDoubleOrNull()
+            rows.add(ImportRow(name, price, quarter, status, category, note, link, priority, dateAdded, dateBought, dateFailed, failureReason, pricePaid))
         }
         return ParseResult(rows, warnings)
     }
