@@ -60,12 +60,9 @@ import com.wantstracker.app.ui.theme.statusColor
 
 @Composable
 fun MainBottomBar(nav: NavController, selected: String) {
-    Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 0.dp) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .padding(horizontal = 6.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -75,24 +72,29 @@ fun MainBottomBar(nav: NavController, selected: String) {
                 Triple(Routes.SETTINGS, "Settings", Icons.Filled.Settings)
             ).forEach { (route, label, icon) ->
                 val active = selected == route
-                Row(
-                    Modifier.clip(RoundedCornerShape(18.dp))
-                        .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                        .clickable {
-                            if (!active) nav.navigate(route) {
-                                popUpTo(Routes.HOME) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable {
+                        if (!active) nav.navigate(route) {
+                            popUpTo(Routes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    }.padding(vertical = 2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(icon, contentDescription = label,
-                        tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (active) Text(label, style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Box(
+                        Modifier.size(width = 64.dp, height = 32.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, contentDescription = label,
+                            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(label, style = MaterialTheme.typography.labelMedium,
+                        color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal)
                 }
             }
         }
@@ -151,84 +153,76 @@ fun WantCard(
     var menu by remember { mutableStateOf(false) }
     val overdue = want.isOverdue()
     val cooling = want.coolingDaysLeft()
-
+    val statusTint = statusColor(want.status)
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                WantThumb(want, category, size = if (compact) 48 else 60)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        want.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    val priceText = when {
-                        want.status == Status.BOUGHT && want.pricePaid != null -> "Paid ${formatInr(want.pricePaid)}"
-                        want.price > 0 -> formatInr(want.price)
-                        else -> "No price"
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.width(5.dp).height(if (compact) 132.dp else 156.dp).background(statusTint))
+            Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    WantThumb(want, category, size = 56)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(want.name, style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        val priceText = when {
+                            want.status == Status.BOUGHT && want.pricePaid != null -> formatInr(want.pricePaid)
+                            want.price > 0 -> formatInr(want.price)
+                            else -> "No price"
+                        }
+                        Text(priceText, style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text(buildString {
+                            append(want.priority.label)
+                            if (category != null) append("  ·  ${category.name}")
+                            want.plannedKey?.let { append("  ·  ${it.label}") }
+                        }, style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Text(
-                        "$priceText  ${want.priority.emoji}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Box {
-                    IconButton(onClick = { menu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More")
-                    }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        Status.entries.filter { it != want.status }.forEach { s ->
-                            DropdownMenuItem(
-                                text = { Text("Move to ${s.emoji} ${s.label}") },
-                                onClick = {
+                    Box {
+                        IconButton(onClick = { menu = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "More actions",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            Status.entries.filter { it != want.status }.forEach { st ->
+                                DropdownMenuItem(text = { Text(st.label) }, onClick = {
                                     menu = false
-                                    onStatus(s)
-                                }
-                            )
+                                    onStatus(st)
+                                })
+                            }
+                            DropdownMenuItem(text = { Text("Edit") }, onClick = {
+                                menu = false
+                                onEdit()
+                            })
                         }
-                        DropdownMenuItem(text = { Text("Edit") }, onClick = {
-                            menu = false
-                            onEdit()
-                        })
                     }
                 }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatusPill(want.status)
-                if (category != null) Pill("${category.emoji} ${category.name}", Color(category.color))
-                if (overdue) Pill("Overdue", statusColor(Status.FAILED))
-                if (cooling != null && want.status.isOpen) {
-                    Pill(if (cooling > 0) "⏳ ${cooling}d" else "⏳ ready to decide", MaterialTheme.colorScheme.tertiary)
-                }
-            }
-            if (!compact) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    when (want.status) {
-                        Status.NOT_STARTED -> TextButton(onClick = { onStatus(Status.IN_PROGRESS) }) { Text("▶ Start") }
-                        Status.IN_PROGRESS -> {
-                            TextButton(onClick = { onStatus(Status.BOUGHT) }) { Text("🟢 Bought") }
-                            TextButton(onClick = { onStatus(Status.FAILED) }) { Text("🔴 Failed") }
-                        }
-                        else -> {}
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    StatusPill(want.status)
+                    if (overdue) Pill("Overdue", statusColor(Status.FAILED))
+                    if (cooling != null && want.status.isOpen) {
+                        Pill(if (cooling > 0) "${cooling} days left" else "Ready to decide", MaterialTheme.colorScheme.tertiary)
                     }
-                    if (overdue) {
-                        val next = QuarterKey.now()
-                        TextButton(onClick = onMoveQuarter) { Text("Move to ${next.label}") }
+                }
+                if (!compact) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        when (want.status) {
+                            Status.NOT_STARTED -> TextButton(onClick = { onStatus(Status.IN_PROGRESS) }) { Text("Start") }
+                            Status.IN_PROGRESS -> {
+                                TextButton(onClick = { onStatus(Status.BOUGHT) }) { Text("Bought") }
+                                TextButton(onClick = { onStatus(Status.FAILED) }) { Text("Failed") }
+                            }
+                            else -> {}
+                        }
+                        if (overdue) TextButton(onClick = onMoveQuarter) { Text("Move to current quarter") }
                     }
                 }
             }
