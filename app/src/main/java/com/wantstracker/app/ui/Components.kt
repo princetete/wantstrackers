@@ -42,13 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.wantstracker.app.data.CategoryEntity
 import com.wantstracker.app.data.WantEntity
 import com.wantstracker.app.domain.QuarterKey
@@ -57,7 +55,6 @@ import com.wantstracker.app.domain.coolingDaysLeft
 import com.wantstracker.app.domain.formatInr
 import com.wantstracker.app.domain.isOverdue
 import com.wantstracker.app.ui.theme.statusColor
-import java.io.File
 
 @Composable
 fun MainBottomBar(nav: NavController, selected: String) {
@@ -115,23 +112,12 @@ fun StatusPill(status: Status, modifier: Modifier = Modifier) {
 
 @Composable
 fun WantThumb(want: WantEntity, category: CategoryEntity?, size: Int = 56) {
-    val shape = RoundedCornerShape(14.dp)
-    val file = if (want.imagePath.isNotBlank()) File(want.imagePath) else null
-    if (file != null && file.exists()) {
-        AsyncImage(
-            model = file,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.size(size.dp).clip(shape)
-        )
-    } else {
-        val tint = category?.let { Color(it.color) } ?: MaterialTheme.colorScheme.primary
-        Box(
-            Modifier.size(size.dp).clip(shape).background(tint.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(category?.emoji ?: "🛍️", fontSize = (size / 2).sp)
-        }
+    val tint = category?.let { Color(it.color) } ?: MaterialTheme.colorScheme.primary
+    Box(
+        Modifier.size(size.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.16f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(category?.emoji ?: "🛍️", fontSize = (size / 2).sp)
     }
 }
 
