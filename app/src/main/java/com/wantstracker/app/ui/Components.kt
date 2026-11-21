@@ -58,7 +58,10 @@ import com.wantstracker.app.ui.theme.statusColor
 
 @Composable
 fun MainBottomBar(nav: NavController, selected: String) {
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp
+    ) {
         listOf(
             Triple(Routes.HOME, "Wants", Icons.Filled.Favorite),
             Triple(Routes.INSIGHTS, "Insights", Icons.Filled.BarChart),
