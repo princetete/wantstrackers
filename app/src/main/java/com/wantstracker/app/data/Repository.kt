@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import com.wantstracker.app.backup.ImportRow
 import com.wantstracker.app.domain.QuarterKey
 import com.wantstracker.app.domain.Status
+import com.wantstracker.app.domain.Priority
 import com.wantstracker.app.domain.formatInr
 import com.wantstracker.app.notify.Reminders
 import com.wantstracker.app.widget.WantsWidgetProvider
@@ -147,7 +148,13 @@ class Repository(private val context: Context, val db: AppDatabase) {
                 val w = WantEntity(
                     name = r.name,
                     price = r.price,
+                    link = r.link,
                     notes = if (r.status == Status.FAILED) "" else r.note,
+                    priority = when (r.priority.trim().lowercase()) {
+                        "need" -> Priority.NEED
+                        "someday" -> Priority.SOMEDAY
+                        else -> Priority.WANT
+                    },
                     categoryId = catId,
                     plannedYear = q?.year,
                     plannedQuarter = q?.quarter,
