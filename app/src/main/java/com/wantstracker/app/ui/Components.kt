@@ -158,7 +158,7 @@ fun WantThumb(want: WantEntity, category: CategoryEntity?, size: Int = 56) {
             Modifier.size(size.dp).clip(shape).background(tint.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(category?.emoji ?: "🛍️", fontSize = (size / 2).sp)
+            Text(want.emoji, fontSize = (size / 2).sp).sp)
         }
     }
 }
@@ -476,19 +476,17 @@ fun EmptyState(emoji: String, title: String, subtitle: String) {
 @Composable
 fun QuarterPicker(year: Int?, quarter: Int?, onChange: (Int?, Int?) -> Unit) {
     val now = QuarterKey.now()
-    val years = (now.year - 6)..(now.year + 3)
+    val years = 2025..(now.year + 3)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = year == null,
-                onClick = { onChange(null, null) },
-                label = { Text("Unplanned") }
-            )
+        Row(
+            Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             (1..4).forEach { q ->
                 FilterChip(
                     selected = quarter == q && year != null,
                     onClick = { onChange(year ?: now.year, q) },
-                    label = { Text("Q$q") }
+                    label = { Text("Q$q", maxLines = 1, softWrap = false) }
                 )
             }
         }
