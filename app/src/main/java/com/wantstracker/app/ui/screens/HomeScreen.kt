@@ -2,6 +2,7 @@
 
 package com.wantstracker.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -388,7 +389,6 @@ private fun TableView(wants: List<WantEntity>, nav: NavController) {
             HorizontalDivider()
         }
         items(wants.sortedBy { it.name.lowercase() }, key = { it.id }) { w ->
-            androidx.compose.foundation.clickable
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 11.dp)
                     .then(Modifier),
