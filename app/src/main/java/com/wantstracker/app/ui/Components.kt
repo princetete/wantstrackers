@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -456,7 +457,7 @@ fun SectionHeader(text: String, count: Int, highlight: Boolean = false, total: D
 }
 
 @Composable
-fun EmptyState(emoji: String, title: String, subtitle: String) {
+fun EmptyState(emoji: String, title: String, subtitle: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
     Column(
         Modifier.fillMaxWidth().padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -470,6 +471,10 @@ fun EmptyState(emoji: String, title: String, subtitle: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onAction) { Text(actionLabel) }
+        }
     }
 }
 
