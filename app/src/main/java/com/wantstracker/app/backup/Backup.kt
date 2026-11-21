@@ -46,6 +46,7 @@ object Backup {
             o.put("price", w.price)
             o.put("link", w.link)
             o.put("notes", w.notes)
+            o.put("emoji", w.emoji)
             o.put("priority", w.priority.name)
             o.put("categoryId", w.categoryId)
             o.put("plannedYear", w.plannedYear)
@@ -110,7 +111,8 @@ object Backup {
                     link = o.optString("link", ""),
                     imagePath = path,
                     notes = o.optString("notes", ""),
-                    priority = runCatching { Priority.valueOf(o.getString("priority")) }.getOrDefault(Priority.WANT),
+                    emoji = o.optString("emoji", "🛍️"),
+                    priority = runCatching { Priority.valueOf(o.getString("priority")) }.getOrDefault(Priority.WANT).let { if (it == Priority.NEED) Priority.WANT else it },
                     categoryId = o.longOrNull("categoryId"),
                     plannedYear = o.intOrNull("plannedYear"),
                     plannedQuarter = o.intOrNull("plannedQuarter"),
