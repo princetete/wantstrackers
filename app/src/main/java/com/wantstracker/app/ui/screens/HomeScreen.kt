@@ -252,10 +252,10 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
             when {
                 wantsOrNull == null -> Spacer(Modifier.fillMaxSize())
                 wants.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    EmptyState("🛍️", "Nothing here yet", "Tap “Add want” to start your wishlist.")
+                    EmptyState("🛍️", "Your wishlist starts here", "Add the things you want to buy and organise them by year, quarter and priority.", "Add your first want") { nav.navigate(Routes.form(0)) }
                 }
                 filtered.isEmpty() && !board -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    EmptyState("🔍", "No matches", "Try clearing some filters.")
+                    EmptyState("🔍", "No matches found", "Try changing your search or filters.", "Clear filters") { statusFilter = null; yearFilter = null; categoryFilter = null; priorityFilter = null; query = "" }
                 }
                 board -> BoardView(base, catById, nav, vm, requester)
                 else -> ListView(filtered, catById, nav, vm, requester, sort, thisQuarter)
