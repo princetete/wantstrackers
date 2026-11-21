@@ -2,9 +2,6 @@
 
 package com.wantstracker.app.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,9 +52,6 @@ import com.wantstracker.app.ui.CategoryEditDialog
 import com.wantstracker.app.ui.DateField
 import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.QuarterPicker
-import com.wantstracker.app.ui.WantThumb
-import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun WantFormScreen(vm: MainViewModel, nav: NavController, id: Long) {
@@ -74,7 +68,6 @@ fun WantFormScreen(vm: MainViewModel, nav: NavController, id: Long) {
 @Composable
 private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEntity?) {
     val categories by vm.categories.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val isNew = initial == null
 
     var name by rememberSaveable { mutableStateOf(initial?.name ?: "") }
@@ -87,7 +80,6 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     var priority by rememberSaveable { mutableStateOf(initial?.priority ?: Priority.WANT) }
     var plannedYear by rememberSaveable { mutableStateOf<Int?>(initial?.plannedYear) }
     var plannedQuarter by rememberSaveable { mutableStateOf<Int?>(initial?.plannedQuarter) }
-    var imagePath by rememberSaveable { mutableStateOf(initial?.imagePath ?: "") }
     var status by rememberSaveable { mutableStateOf(initial?.status ?: Status.NOT_STARTED) }
     var paidText by rememberSaveable {
         mutableStateOf(initial?.pricePaid?.let { plainNumber(it) } ?: "")
@@ -96,9 +88,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
     var failReason by rememberSaveable { mutableStateOf("") }
     var showNewCategory by remember { mutableStateOf(false) }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch { vm.saveImage(uri)?.let { imagePath = it } }
-    }
+
 
     val canSave = name.isNotBlank() && !(isNew && status == Status.FAILED && failReason.isBlank())
 
@@ -116,7 +106,6 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     categoryId = categoryId,
                     plannedYear = plannedYear,
                     plannedQuarter = plannedQuarter,
-                    imagePath = imagePath,
                     pricePaid = if (initial.status == Status.BOUGHT) {
                         paidText.replace(",", "").toDoubleOrNull() ?: initial.pricePaid
                     } else initial.pricePaid
@@ -134,7 +123,6 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     name = name.trim(),
                     price = price,
                     link = link.trim(),
-                    imagePath = imagePath,
                     notes = notes.trim(),
                     priority = priority,
                     categoryId = categoryId,
@@ -264,18 +252,6 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Photo", style = MaterialTheme.typography.titleSmall)
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (imagePath.isNotBlank() && File(imagePath).exists()) {
-                    WantThumb(WantEntity(name = name, imagePath = imagePath, addedAt = 0, lastStatusChangeAt = 0), null, size = 72)
-                }
-                OutlinedButton(onClick = {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text(if (imagePath.isBlank()) "Add photo" else "Change photo") }
-                if (imagePath.isNotBlank()) {
-                    TextButton(onClick = { imagePath = "" }) { Text("Remove") }
-                }
-            }
             Spacer(Modifier.height(24.dp))
         }
     }
