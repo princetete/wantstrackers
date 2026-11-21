@@ -212,35 +212,40 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             DashboardSummary(wants)
-            ChipRow {
-                FilterChip(selected = statusFilter == null, onClick = { statusFilter = null }, label = { Text("All") })
-                Status.entries.forEach { s ->
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterDropdown(
+                    label = "Status",
+                    selected = statusFilter?.let { "${it.emoji} ${it.label}" } ?: "All statuses",
+                    options = listOf("All statuses") + Status.entries.map { "${it.emoji} ${it.label}" },
+                    onSelect = { index -> statusFilter = if (index == 0) null else Status.entries[index - 1] }
+                )
+                FilterDropdown(
+                    label = "Year",
+                    selected = yearFilter?.toString() ?: "All years",
+                    options = listOf("All years") + years.map { it.toString() },
+                    onSelect = { index -> yearFilter = if (index == 0) null else years[index - 1] }
+                )
+                FilterDropdown(
+                    label = "Category",
+                    selected = categories.firstOrNull { it.id == categoryFilter }?.let { "${it.emoji} ${it.name}" } ?: "All categories",
+                    options = listOf("All categories") + categories.map { "${it.emoji} ${it.name}" },
+                    onSelect = { index -> categoryFilter = if (index == 0) null else categories[index - 1].id }
+                )
+                if (statusFilter != null || yearFilter != null || categoryFilter != null || priorityFilter != null) {
                     FilterChip(
-                        selected = statusFilter == s,
-                        onClick = { statusFilter = if (statusFilter == s) null else s },
-                        label = { Text("${s.emoji} ${s.label}") }
+                        selected = false,
+                        onClick = {
+                            statusFilter = null
+                            yearFilter = null
+                            categoryFilter = null
+                            priorityFilter = null
+                        },
+                        label = { Text("Clear") }
                     )
-                }
-            }
-            ChipRow {
-                FilterChip(selected = yearFilter == null, onClick = { yearFilter = null }, label = { Text("All years") })
-                years.forEach { y ->
-                    FilterChip(
-                        selected = yearFilter == y,
-                        onClick = { yearFilter = if (yearFilter == y) null else y },
-                        label = { Text("$y") }
-                    )
-                }
-            }
-            if (categories.isNotEmpty()) {
-                ChipRow {
-                    categories.forEach { c ->
-                        FilterChip(
-                            selected = categoryFilter == c.id,
-                            onClick = { categoryFilter = if (categoryFilter == c.id) null else c.id },
-                            label = { Text("${c.emoji} ${c.name}") }
-                        )
-                    }
                 }
             }
 
@@ -267,6 +272,34 @@ private fun ChipRow(content: @Composable () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) { content() }
+}
+
+@Composable
+private fun FilterDropdown(
+    label: String,
+    selected: String,
+    options: List<String>,
+    onSelect: (Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilterChip(
+            selected = selected != options.firstOrNull(),
+            onClick = { expanded = true },
+            label = { Text("$label: $selected", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelect(index)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
