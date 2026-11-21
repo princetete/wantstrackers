@@ -4,75 +4,59 @@ import com.wantstracker.app.domain.QuarterKey
 import com.wantstracker.app.domain.Status
 
 data class ImportRow(
-    val name: String,
-    val price: Double,
-    val quarter: QuarterKey?,
-    val status: Status,
-    val category: String,
-    val note: String
+    val name: String, val price: Double, val quarter: QuarterKey?, val status: Status,
+    val category: String, val note: String, val link: String = "", val priority: String = "Want"
 )
-
 data class ParseResult(val rows: List<ImportRow>, val warnings: List<String>)
 
-/**
- * One want per line: name, price, quarter, status, category, note
- * e.g.  iPhone 15, 79900, Q2 2025, bought, Tech
- */
 object CsvImport {
     fun parse(text: String): ParseResult {
         val rows = mutableListOf<ImportRow>()
         val warnings = mutableListOf<String>()
-        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
-        lines.forEachIndexed { index, line ->
-            val delim = when {
+        val lines = text.lines().filter { it.isNotBlank() }
+        if (lines.isEmpty()) return ParseResult(rows, warnings)
+        val first = splitLine(lines.first(), ',')
+        val hasHeader = first.firstOrNull()?.trim()?.lowercase() in setOf("name", "title", "item")
+        val headers = if (hasHeader) first.map { it.trim().lowercase() } else emptyList()
+        (if (hasHeader) lines.drop(1) else lines).forEachIndexed { index, line ->
+            val delimiter = when {
                 line.contains('\t') -> '\t'
                 line.count { it == ';' } > line.count { it == ',' } -> ';'
                 line.contains('|') && !line.contains(',') -> '|'
                 else -> ','
             }
-            val cells = splitLine(line, delim)
-            val first = cells.firstOrNull()?.trim().orEmpty()
-            if (index == 0 && first.lowercase() in setOf("name", "item", "want", "title")) return@forEachIndexed
-            if (first.isBlank()) {
-                warnings.add("Line ${index + 1}: no name, skipped")
-                return@forEachIndexed
+            val cells = splitLine(line, delimiter)
+            fun field(names: Set<String>, fallback: Int): String {
+                val idx = if (hasHeader) headers.indexOfFirst { it in names } else fallback
+                return cells.getOrNull(idx)?.trim().orEmpty()
             }
-            val price = cells.getOrNull(1)?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull() ?: 0.0
-            val qText = cells.getOrNull(2).orEmpty().trim()
-            val quarter = QuarterKey.parse(qText)
-            if (qText.isNotEmpty() && quarter == null && !qText.equals("unplanned", ignoreCase = true)) {
-                warnings.add("Line ${index + 1}: couldn't read quarter \"$qText\" (use e.g. Q2 2025), imported as unplanned")
-            }
-            val status = Status.fromText(cells.getOrNull(3).orEmpty())
-            val category = cells.getOrNull(4)?.trim().orEmpty()
-            val note = cells.getOrNull(5)?.trim().orEmpty()
-            rows.add(ImportRow(first, price, quarter, status, category, note))
+            val name = field(setOf("name","title","item"), 0)
+            if (name.isBlank()) { warnings.add("Row \${index + 1}: missing name, skipped"); return@forEachIndexed }
+            val price = field(setOf("price"), 1).replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+            val year = field(setOf("planned year","year"), -1).toIntOrNull()
+            val qText = field(setOf("planned quarter","quarter"), 2)
+            val quarter = QuarterKey.parse(qText) ?: if (year != null && qText.matches(Regex("[1-4]"))) QuarterKey(year, qText.toInt()) else null
+            val status = Status.fromText(field(setOf("status"), 3))
+            val category = field(setOf("category"), 4)
+            val note = field(setOf("notes","note"), 5)
+            val link = field(setOf("link","url"), 6)
+            val priority = field(setOf("priority"), 7).ifBlank { "Want" }
+            rows.add(ImportRow(name, price, quarter, status, category, note, link, priority))
         }
         return ParseResult(rows, warnings)
     }
-
-    private fun splitLine(line: String, delim: Char): List<String> {
-        val out = mutableListOf<String>()
-        val cur = StringBuilder()
-        var inQuotes = false
-        var i = 0
+    private fun splitLine(line: String, delimiter: Char): List<String> {
+        val out = mutableListOf<String>(); val cur = StringBuilder(); var quoted = false; var i = 0
         while (i < line.length) {
-            val c = line[i]
+            val ch = line[i]
             when {
-                c == '"' && inQuotes && i + 1 < line.length && line[i + 1] == '"' -> {
-                    cur.append('"')
-                    i++
-                }
-                c == '"' -> inQuotes = !inQuotes
-                c == delim && !inQuotes -> {
-                    out.add(cur.toString())
-                    cur.clear()
-                }
-                else -> cur.append(c)
+                ch == '"' && quoted && i + 1 < line.length && line[i + 1] == '"' -> { cur.append('"'); i++ }
+                ch == '"' -> quoted = !quoted
+                ch == delimiter && !quoted -> { out.add(cur.toString()); cur.clear() }
+                else -> cur.append(ch)
             }
             i++
         }
-        out.add(cur.toString())
-        return out
+        out.add(cur.toString()); return out
     }
 }
