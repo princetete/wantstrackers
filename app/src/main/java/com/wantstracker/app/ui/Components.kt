@@ -158,7 +158,7 @@ fun WantThumb(want: WantEntity, category: CategoryEntity?, size: Int = 56) {
             Modifier.size(size.dp).clip(shape).background(tint.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(want.emoji, fontSize = (size / 2).sp).sp)
+            Text(want.emoji, fontSize = (size / 2).sp)
         }
     }
 }
