@@ -127,7 +127,7 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
 
             Section("Import & Export") {
                 Text(
-                    "Import and export your wishlist using CSV or Excel (.xlsx). Includes names, prices, links, notes, categories, priority, planned year and quarter, status and dates. No photos are included.",
+                    "Import and export your wishlist using CSV or Excel (.xlsx). Includes names, listed and paid prices, links, notes, categories, priority, planned year and quarter, status, dates and failure reasons. No photos are included.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
