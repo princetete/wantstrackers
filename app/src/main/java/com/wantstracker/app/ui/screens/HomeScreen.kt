@@ -352,7 +352,6 @@ private fun ListView(
                     items(group, key = { it.id }) { w -> cardFor(w)() }
                 }
             }
-            }
         } else {
             val sorted = when (sort) {
                 SortMode.NEWEST -> filtered.sortedByDescending { it.addedAt }
