@@ -394,7 +394,7 @@ private fun TableView(wants: List<WantEntity>, nav: NavController) {
                     .padding(horizontal = 8.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(w.name, Modifier.weight(2.2f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                Text("${w.emoji} ${w.name}", Modifier.weight(2.2f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                 Text(w.status.label, Modifier.weight(1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = statusColor(w.status))
                 Text(if (w.priority == Priority.NEED) "Want" else w.priority.label, Modifier.weight(1.1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
                 Text(if (w.status == Status.BOUGHT && w.pricePaid != null) formatInr(w.pricePaid) else formatInr(w.price), Modifier.weight(1.1f), maxLines = 1, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.End, color = MaterialTheme.colorScheme.primary)
