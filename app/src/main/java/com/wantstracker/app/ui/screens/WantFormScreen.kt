@@ -183,87 +183,100 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
             }
 
             FormSection("Category", "Group similar wants together.") {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
-                categories.forEach { c ->
-                    FilterChip(
-                        selected = categoryId == c.id,
-                        onClick = { categoryId = c.id },
-                        label = { Text("${c.emoji} ${c.name}") }
-                    )
-                }
-                FilterChip(selected = false, onClick = { showNewCategory = true }, label = { Text("＋ New") })
-            }
-
-            Text("Priority", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Priority.entries.forEach { p ->
-                    FilterChip(
-                        selected = priority == p,
-                        onClick = { priority = p },
-                        label = { Text("${p.emoji} ${p.label}") }
-                    )
-                }
-            }
-
-            Text("Planned for", style = MaterialTheme.typography.titleSmall)
-            QuarterPicker(plannedYear, plannedQuarter) { y, q ->
-                plannedYear = y
-                plannedQuarter = q
-            }
-
-            if (isNew) {
-                Text("Status", style = MaterialTheme.typography.titleSmall)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Status.entries.forEach { s ->
+                    FilterChip(selected = categoryId == null, onClick = { categoryId = null }, label = { Text("None") })
+                    categories.forEach { c ->
                         FilterChip(
-                            selected = status == s,
-                            onClick = { status = s },
-                            label = { Text("${s.emoji} ${s.label}") }
+                            selected = categoryId == c.id,
+                            onClick = { categoryId = c.id },
+                            label = { Text("${c.emoji} ${c.name}") }
+                        )
+                    }
+                    FilterChip(selected = false, onClick = { showNewCategory = true }, label = { Text("＋ New") })
+                }
+            }
+
+            FormSection("Priority", "Choose how important this want is.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Priority.entries.forEach { p ->
+                        FilterChip(
+                            selected = priority == p,
+                            onClick = { priority = p },
+                            label = { Text("${p.emoji} ${p.label}") }
                         )
                     }
                 }
-                if (status == Status.BOUGHT) {
-                    OutlinedTextField(
-                        value = paidText, onValueChange = { paidText = it },
-                        label = { Text("Price paid (₹) — blank = listed price") }, singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                if (status == Status.BOUGHT || status == Status.FAILED) {
-                    DateField(
-                        if (status == Status.BOUGHT) "Bought on" else "Failed on",
-                        doneAt, { doneAt = it }
-                    )
-                }
-                if (status == Status.FAILED) {
-                    OutlinedTextField(
-                        value = failReason, onValueChange = { failReason = it },
-                        label = { Text("Why did it fail? (required)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            } else if (initial?.status == Status.BOUGHT) {
-                OutlinedTextField(
-                    value = paidText, onValueChange = { paidText = it },
-                    label = { Text("Price paid (₹)") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
 
-            OutlinedTextField(
-                value = link, onValueChange = { link = it },
-                label = { Text("Link (optional)") }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = notes, onValueChange = { notes = it },
-                label = { Text("Notes") }, minLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
+            FormSection("Plan", "Choose when you want to get it.") {
+                QuarterPicker(plannedYear, plannedQuarter) { y, q ->
+                    plannedYear = y
+                    plannedQuarter = q
+                }
+            }
+
+            if (isNew) {
+                FormSection("Progress", "Set the current status of this want.") {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Status.entries.forEach { statusOption ->
+                            FilterChip(
+                                selected = status == statusOption,
+                                onClick = { status = statusOption },
+                                label = { Text("${statusOption.emoji} ${statusOption.label}") }
+                            )
+                        }
+                    }
+                    if (status == Status.BOUGHT) {
+                        OutlinedTextField(
+                            value = paidText, onValueChange = { paidText = it },
+                            label = { Text("Price paid (₹) — blank = listed price") }, singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                    if (status == Status.BOUGHT || status == Status.FAILED) {
+                        DateField(
+                            if (status == Status.BOUGHT) "Bought on" else "Failed on",
+                            doneAt, { doneAt = it }
+                        )
+                    }
+                    if (status == Status.FAILED) {
+                        OutlinedTextField(
+                            value = failReason, onValueChange = { failReason = it },
+                            label = { Text("Why did it fail? (required)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                }
+            } else if (initial?.status == Status.BOUGHT) {
+                FormSection("Purchase", "Record what you actually paid.") {
+                    OutlinedTextField(
+                        value = paidText, onValueChange = { paidText = it },
+                        label = { Text("Price paid (₹)") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            }
+
+            FormSection("Extra details", "Add a product link or anything you want to remember.") {
+                OutlinedTextField(
+                    value = link, onValueChange = { link = it },
+                    label = { Text("Link (optional)") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                OutlinedTextField(
+                    value = notes, onValueChange = { notes = it },
+                    label = { Text("Notes") }, minLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
         }
@@ -278,5 +291,25 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                 showNewCategory = false
             }
         )
+    }
+}
+
+@Composable
+private fun FormSection(title: String, subtitle: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            content()
+        }
     }
 }
