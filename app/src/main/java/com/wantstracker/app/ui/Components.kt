@@ -60,29 +60,41 @@ import com.wantstracker.app.ui.theme.statusColor
 
 @Composable
 fun MainBottomBar(nav: NavController, selected: String) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 0.dp
-    ) {
-        listOf(
-            Triple(Routes.HOME, "Wants", Icons.Filled.Favorite),
-            Triple(Routes.INSIGHTS, "Insights", Icons.Filled.BarChart),
-            Triple(Routes.SETTINGS, "Settings", Icons.Filled.Settings)
-        ).forEach { (route, label, icon) ->
-            NavigationBarItem(
-                selected = selected == route,
-                onClick = {
-                    if (selected != route) {
-                        nav.navigate(route) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+    Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            listOf(
+                Triple(Routes.HOME, "Wants", Icons.Filled.Favorite),
+                Triple(Routes.INSIGHTS, "Insights", Icons.Filled.BarChart),
+                Triple(Routes.SETTINGS, "Settings", Icons.Filled.Settings)
+            ).forEach { (route, label, icon) ->
+                val active = selected == route
+                Row(
+                    Modifier.clip(RoundedCornerShape(18.dp))
+                        .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                        .clickable {
+                            if (!active) nav.navigate(route) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                    }
-                },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
-            )
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(icon, contentDescription = label,
+                        tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (active) Text(label, style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     }
 }
