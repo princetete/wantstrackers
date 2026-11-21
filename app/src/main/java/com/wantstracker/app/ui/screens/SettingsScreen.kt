@@ -43,8 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.wantstracker.app.LockState
-import com.wantstracker.app.domain.formatDate
-import com.wantstracker.app.ui.ConfirmDialog
 import com.wantstracker.app.ui.MainBottomBar
 import com.wantstracker.app.ui.MainViewModel
 import com.wantstracker.app.ui.Routes
@@ -60,16 +58,14 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
     val theme by vm.prefs.theme.collectAsStateWithLifecycle()
     val reminders by vm.prefs.remindersEnabled.collectAsStateWithLifecycle()
     val lock by vm.prefs.lockEnabled.collectAsStateWithLifecycle()
-    var confirmRestore by remember { mutableStateOf<android.net.Uri?>(null) }
+    val wants by vm.wants.collectAsStateWithLifecycle()
+    val categories by vm.categories.collectAsStateWithLifecycle()
 
     fun toast(msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
 
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) vm.exportTo(uri) { toast(it) }
-    }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) confirmRestore = uri
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) vm.exportCsv(uri, wants.orEmpty(), categories) { toast(it) }
     }
 
     Scaffold(
@@ -124,18 +120,16 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
                 NavRow("📥  Import old wants (CSV / paste)") { nav.navigate(Routes.IMPORT) }
             }
 
-            Section("Backup") {
+            Section("Import & Export") {
                 Text(
-                    "Saves everything (including photos) to one file you can keep anywhere. Restoring replaces all current data.",
+                    "Export your wants as a CSV spreadsheet. It includes names, prices, links, notes, categories, priority, planned year and quarter, status and dates. No photos are included.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = {
-                        exportLauncher.launch("wants-tracker-backup-${formatDate(System.currentTimeMillis()).replace(' ', '-')}.json")
-                    }) { Text("Export backup") }
-                    OutlinedButton(onClick = { restoreLauncher.launch(arrayOf("*/*")) }) { Text("Restore backup") }
-                }
+                OutlinedButton(enabled = wants != null, onClick = {
+                    exportLauncher.launch("wants-tracker-${System.currentTimeMillis()}.csv")
+                }) { Text("Export CSV") }
+                NavRow("📥  Import wants from CSV") { nav.navigate(Routes.IMPORT) }
             }
 
             Section("Widget") {
@@ -155,18 +149,6 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
         }
     }
 
-    confirmRestore?.let { uri ->
-        ConfirmDialog(
-            title = "Replace all data?",
-            text = "Everything currently in the app will be replaced by the backup. This can't be undone.",
-            confirmLabel = "Restore",
-            onDismiss = { confirmRestore = null },
-            onConfirm = {
-                confirmRestore = null
-                vm.restoreFrom(uri) { toast(it) }
-            }
-        )
-    }
 }
 
 @Composable
