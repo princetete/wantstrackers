@@ -134,7 +134,7 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
-                    InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
+                    InfoRow("Priority", if (w.priority.name == "NEED") "✨ Want" else "${w.priority.emoji} ${w.priority.label}")
                     InfoRow("Planned", w.plannedKey?.label ?: "Unplanned")
                     InfoRow("Added", formatDate(w.addedAt))
                     if (w.status == Status.BOUGHT) {
