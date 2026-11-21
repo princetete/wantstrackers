@@ -147,7 +147,9 @@ class Repository(private val context: Context, val db: AppDatabase) {
                 val w = WantEntity(
                     name = r.name,
                     price = r.price,
+                    link = r.link,
                     notes = if (r.status == Status.FAILED) "" else r.note,
+                    emoji = r.emoji,
                     categoryId = catId,
                     plannedYear = q?.year,
                     plannedQuarter = q?.quarter,
