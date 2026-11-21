@@ -107,31 +107,58 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(w.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        if (w.price > 0) formatInr(w.price) else "No price",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    StatusPill(w.status)
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(18.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    WantThumb(w, category, size = 68)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Text(w.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(
+                            if (w.price > 0) formatInr(w.price) else "No price set",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        StatusPill(w.status)
+                    }
                 }
             }
 
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Text("Plan & details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     InfoRow("Category", category?.let { "${it.emoji} ${it.name}" } ?: "—")
                     InfoRow("Priority", "${w.priority.emoji} ${w.priority.label}")
                     InfoRow("Planned", w.plannedKey?.label ?: "Unplanned")
                     InfoRow("Added", formatDate(w.addedAt))
-                    if (w.status == Status.BOUGHT) {
-                        InfoRow("Bought", w.boughtAt?.let { formatDate(it) } ?: "—")
-                        InfoRow("Paid", w.pricePaid?.let { formatInr(it) } ?: "—")
-                    }
-                    if (w.status == Status.FAILED) {
-                        InfoRow("Failed", w.failedAt?.let { formatDate(it) } ?: "—")
-                        InfoRow("Reason", w.failReason.ifBlank { "—" })
+                }
+            }
+
+            if (w.status == Status.BOUGHT || w.status == Status.FAILED) {
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            if (w.status == Status.BOUGHT) "Purchase details" else "Outcome details",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (w.status == Status.BOUGHT) {
+                            InfoRow("Bought", w.boughtAt?.let { formatDate(it) } ?: "—")
+                            InfoRow("Listed", if (w.price > 0) formatInr(w.price) else "—")
+                            InfoRow("Paid", w.pricePaid?.let { formatInr(it) } ?: "—")
+                        } else {
+                            InfoRow("Failed", w.failedAt?.let { formatDate(it) } ?: "—")
+                            InfoRow("Reason", w.failReason.ifBlank { "—" })
+                        }
                     }
                 }
             }
@@ -146,7 +173,12 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                 )
             }
             if (w.notes.isNotBlank()) {
-                Text(w.notes, style = MaterialTheme.typography.bodyLarge)
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(w.notes, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
             }
 
             Text("Status", style = MaterialTheme.typography.titleSmall)
@@ -201,23 +233,25 @@ fun DetailScreen(vm: MainViewModel, nav: NavController, id: Long) {
                 }
             }
 
-            Text("Timeline", style = MaterialTheme.typography.titleSmall)
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                logs.forEach { l ->
-                    Row(verticalAlignment = Alignment.Top) {
-                        Text(l.status.emoji)
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                if (l.note == "Added") "Added" else l.status.label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                formatDate(l.at) + if (l.note.isNotBlank() && l.note != "Added") " · ${l.note}" else "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Activity timeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    logs.forEachIndexed { index, l ->
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text(l.status.emoji)
+                            Spacer(Modifier.width(10.dp))
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    if (l.note == "Added") "Added to wishlist" else l.status.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    formatDate(l.at) + if (l.note.isNotBlank() && l.note != "Added") " · ${l.note}" else "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
