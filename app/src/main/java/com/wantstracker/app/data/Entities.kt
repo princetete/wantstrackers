@@ -34,6 +34,7 @@ data class WantEntity(
     val link: String = "",
     val imagePath: String = "",
     val notes: String = "",
+    val emoji: String = "🛍️",
     val priority: Priority = Priority.WANT,
     val categoryId: Long? = null,
     val plannedYear: Int? = null,
