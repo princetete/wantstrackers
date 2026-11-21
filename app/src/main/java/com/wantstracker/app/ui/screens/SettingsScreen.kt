@@ -117,7 +117,6 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
             Section("Manage") {
                 NavRow("🗂️  Categories") { nav.navigate(Routes.CATEGORIES) }
                 HorizontalDivider()
-                NavRow("📥  Import old wants (CSV / paste)") { nav.navigate(Routes.IMPORT) }
             }
 
             Section("Import & Export") {
