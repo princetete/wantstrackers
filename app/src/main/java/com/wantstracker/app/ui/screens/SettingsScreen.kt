@@ -67,6 +67,9 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) vm.exportCsv(uri, wants.orEmpty(), categories) { toast(it) }
     }
+    val excelExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri ->
+        if (uri != null) vm.exportXlsx(uri, wants.orEmpty(), categories) { toast(it) }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings", fontWeight = FontWeight.Bold) }) },
@@ -121,14 +124,17 @@ fun SettingsScreen(vm: MainViewModel, nav: NavController) {
 
             Section("Import & Export") {
                 Text(
-                    "Export your wants as a CSV spreadsheet. It includes names, prices, links, notes, categories, priority, planned year and quarter, status and dates. No photos are included.",
+                    "Import and export your wishlist using CSV or Excel (.xlsx). Includes names, prices, links, notes, categories, priority, planned year and quarter, status and dates. No photos are included.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedButton(enabled = wants != null, onClick = {
                     exportLauncher.launch("wants-tracker-${System.currentTimeMillis()}.csv")
                 }) { Text("Export CSV") }
-                NavRow("📥  Import wants from CSV") { nav.navigate(Routes.IMPORT) }
+                OutlinedButton(enabled = wants != null, onClick = {
+                    excelExportLauncher.launch("wants-tracker-${System.currentTimeMillis()}.xlsx")
+                }) { Text("Export Excel (.xlsx)") }
+                NavRow("📥  Import CSV or Excel") { nav.navigate(Routes.IMPORT) }
             }
 
             Section("Widget") {
