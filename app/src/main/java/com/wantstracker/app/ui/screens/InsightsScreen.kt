@@ -75,7 +75,7 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
         }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Insights", fontWeight = FontWeight.Bold) }) },
+        topBar = { TopAppBar(title = { Column(verticalArrangement = Arrangement.spacedBy(2.dp)) { Text("Your insights", fontWeight = FontWeight.Bold); Text("Understand your wishlist progress", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) } }) },
         bottomBar = { MainBottomBar(nav, Routes.INSIGHTS) }
     ) { padding ->
         if (all.isEmpty()) {
@@ -85,7 +85,7 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
             return@Scaffold
         }
         Column(
-            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -97,19 +97,19 @@ fun InsightsScreen(vm: MainViewModel, nav: NavController) {
 
             Card(
                 Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(if (year == null) "Your wishlist at a glance" else "$year at a glance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(if (year == null) "YOUR WISHLIST AT A GLANCE" else "$year AT A GLANCE", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.weight(1f)) {
-                            Text("Spent", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
-                            Text(formatInr(spent), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Spent", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f))
+                            Text(formatInr(spent), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
                         Column(Modifier.weight(1f)) {
                             Text("Still to buy", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
-                            Text(formatInr(openValue), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(formatInr(openValue), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
