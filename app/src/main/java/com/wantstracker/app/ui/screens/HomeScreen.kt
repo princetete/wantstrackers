@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -123,7 +127,10 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                             )
                         )
                     } else {
-                        Text("Wants Tracker", fontWeight = FontWeight.Bold)
+                        Column {
+                            Text("Wants Tracker", fontWeight = FontWeight.Bold)
+                            Text("Dream · Plan · Track", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 },
                 actions = {
@@ -198,6 +205,7 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
         }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
+            DashboardSummary(wants)
             ChipRow {
                 FilterChip(selected = statusFilter == null, onClick = { statusFilter = null }, label = { Text("All") })
                 Status.entries.forEach { s ->
@@ -359,6 +367,60 @@ private fun BoardView(
                     }
                 }
             }
+        }
+    }
+}
+
+ 
+@Composable
+private fun DashboardSummary(wants: List<WantEntity>) {
+    val bought = wants.count { it.status == Status.BOUGHT }
+    val progress = wants.count { it.status == Status.IN_PROGRESS }
+    val failed = wants.count { it.status == Status.FAILED }
+    val planned = wants.count { it.status == Status.NOT_STARTED }
+    val totalValue = wants.filter { it.status.isOpen }.sumOf { it.price }
+
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("TOTAL WANTS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                    Text("${wants.size}", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("STILL TO BUY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                    Text(formatInr(totalValue), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DashboardCount("Planned", planned, Color(0xFF8E8E9A), Modifier.weight(1f))
+            DashboardCount("In progress", progress, Color(0xFF3B82F6), Modifier.weight(1f))
+            DashboardCount("Bought", bought, Color(0xFF22A06B), Modifier.weight(1f))
+            DashboardCount("Failed", failed, Color(0xFFE5484D), Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun DashboardCount(label: String, count: Int, tint: Color, modifier: Modifier) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = tint.copy(alpha = 0.10f))) {
+        Column(
+            Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("${count}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = tint)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
