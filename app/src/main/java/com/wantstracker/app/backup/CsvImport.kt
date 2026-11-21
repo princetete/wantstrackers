@@ -10,6 +10,11 @@ data class ImportRow(
 data class ParseResult(val rows: List<ImportRow>, val warnings: List<String>)
 
 object CsvImport {
+    fun parseMatrix(matrix: List<List<String>>): ParseResult {
+        fun quote(value: String) = "\"" + value.replace("\"", "\"\"") + "\""
+        return parse(matrix.joinToString("\n") { row -> row.joinToString(",") { quote(it) } })
+    }
+
     fun parse(text: String): ParseResult {
         val rows = mutableListOf<ImportRow>()
         val warnings = mutableListOf<String>()
