@@ -439,33 +439,89 @@ private fun DashboardSummary(wants: List<WantEntity>) {
     val totalValue = wants.filter { it.status.isOpen }.sumOf { it.price }
 
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    "YOUR COLLECTION",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Wishlist overview",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                "Dream · Plan · Track",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(26.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                Modifier.fillMaxWidth().padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text("TOTAL WANTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
-                    Text("${wants.size}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                Text(
+                    "TOTAL WANTS",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        wants.size.toString(),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "ESTIMATED TO BUY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                        )
+                        Text(
+                            formatInr(totalValue),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("STILL TO BUY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
-                    Text(formatInr(totalValue), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                }
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { if (wants.isEmpty()) 0f else bought.toFloat() / wants.size },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                )
+                Text(
+                    "$bought of ${wants.size} wants completed",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f)
+                )
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             DashboardCount("Planned", planned, Color(0xFF8E8E9A), Modifier.weight(1f))
             DashboardCount("In progress", progress, Color(0xFF3B82F6), Modifier.weight(1f))
