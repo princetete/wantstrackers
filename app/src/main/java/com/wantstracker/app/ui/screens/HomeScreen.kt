@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -41,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -128,8 +130,8 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                         )
                     } else {
                         Column {
-                            Text("Wants Tracker", fontWeight = FontWeight.Bold)
-                            Text("Dream · Plan · Track", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            Text("Wants Tracker", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+                            Text("Dream · Plan · Track", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -192,7 +194,8 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
                             }
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         bottomBar = { MainBottomBar(nav, Routes.HOME) },
@@ -200,7 +203,10 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
             ExtendedFloatingActionButton(
                 onClick = { nav.navigate(Routes.form(0)) },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Add want") }
+                text = { Text("Add want", fontWeight = FontWeight.SemiBold) },
+                shape = RoundedCornerShape(22.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     ) { padding ->
@@ -240,8 +246,12 @@ fun HomeScreen(vm: MainViewModel, nav: NavController) {
 
             when {
                 wantsOrNull == null -> Spacer(Modifier.fillMaxSize())
-                wants.isEmpty() -> EmptyState("🛍️", "Nothing here yet", "Tap “Add want” to start your wishlist.")
-                filtered.isEmpty() && !board -> EmptyState("🔍", "No matches", "Try clearing some filters.")
+                wants.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    EmptyState("🛍️", "Nothing here yet", "Tap “Add want” to start your wishlist.")
+                }
+                filtered.isEmpty() && !board -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    EmptyState("🔍", "No matches", "Try clearing some filters.")
+                }
                 board -> BoardView(base, catById, nav, vm, requester)
                 else -> ListView(filtered, catById, nav, vm, requester, sort, thisQuarter)
             }
@@ -381,11 +391,12 @@ private fun DashboardSummary(wants: List<WantEntity>) {
     val totalValue = wants.filter { it.status.isOpen }.sumOf { it.price }
 
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             Row(
@@ -414,9 +425,9 @@ private fun DashboardSummary(wants: List<WantEntity>) {
 
 @Composable
 private fun DashboardCount(label: String, count: Int, tint: Color, modifier: Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = tint.copy(alpha = 0.10f))) {
+    Card(modifier = modifier, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = tint.copy(alpha = 0.10f))) {
         Column(
-            Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 6.dp),
+            Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("${count}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = tint)
