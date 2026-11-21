@@ -151,8 +151,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
             TopAppBar(
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Text(if (isNew) "Create your want" else "Refine your want", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                        Text("Add the details and make a plan", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text(if (isNew) "Add want" else "Edit want", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                     }
                 },
                 navigationIcon = {
@@ -160,30 +159,20 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = { TextButton(enabled = canSave, onClick = { save() }) { Text("Save") } }
+                actions = {}
             )
         },
         bottomBar = {
             Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 0.dp
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { nav.popBackStack() },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) { Text("Cancel") }
-                    Button(
-                        onClick = { save() },
-                        enabled = canSave,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) { Text(if (isNew) "Add want" else "Save changes") }
-                }
+                Button(
+                    onClick = { save() },
+                    enabled = canSave,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(48.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) { Text(if (isNew) "Add want" else "Save changes") }
             }
         }
     ) { padding ->
@@ -323,7 +312,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
 private fun FormSection(title: String, subtitle: String, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
         Column(
