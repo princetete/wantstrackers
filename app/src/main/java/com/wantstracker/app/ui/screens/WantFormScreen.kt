@@ -132,6 +132,7 @@ private fun FormContent(vm: MainViewModel, nav: NavController, initial: WantEnti
                     price = price,
                     link = link.trim(),
                     notes = notes.trim(),
+                    emoji = wantEmoji,
                     priority = priority,
                     categoryId = categoryId,
                     plannedYear = plannedYear,
