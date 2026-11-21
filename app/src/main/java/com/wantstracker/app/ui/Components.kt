@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -241,20 +242,39 @@ fun SectionHeader(text: String, count: Int, highlight: Boolean = false) {
 }
 
 @Composable
-fun EmptyState(emoji: String, title: String, subtitle: String) {
+fun EmptyState(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
+) {
     Column(
-        Modifier.fillMaxWidth().padding(40.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(emoji, fontSize = 48.sp)
-        Spacer(Modifier.height(12.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(4.dp))
+        Box(
+            Modifier.size(104.dp).clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(emoji, fontSize = 46.sp)
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
         Text(
             subtitle,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(18.dp))
+            Button(onClick = onAction, shape = RoundedCornerShape(16.dp)) {
+                Text(actionLabel)
+            }
+        }
     }
 }
 
